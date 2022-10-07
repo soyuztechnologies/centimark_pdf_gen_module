@@ -1,0 +1,10 @@
+<mvc:View controllerName="centi.pdf.generator.pdfgenerator.controller.PDFGenerater"
+    xmlns:mvc="sap.ui.core.mvc" displayBlock="true"
+    xmlns="sap.m">
+    <Page id="page" title="{i18n>title}">
+        <content>
+        <Text id="_IDGenText1"  class="sapUiMediumMarginTop" text="PDF Generator"/>
+        <Button id="idButton" class="sapUiMediumMargin" text="Generate" press="onPDFGenerate"/>
+        </content>
+    </Page>
+</mvc:View>
