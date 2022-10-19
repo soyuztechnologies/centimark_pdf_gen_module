@@ -4,7 +4,7 @@
     <Page id="page" title="{i18n>title}">
         <content>
         <Text id="_IDGenText1"  class="sapUiMediumMarginTop" text="PDF Generator"/>
-        <Button id="idButton" class="sapUiMediumMargin" text="Generate" press="onPDFGenerate"/>
+        <Button id="idButton" class="sapUiMediumMargin" text="Generate❤️" press="onPDFGenerate"/>
         </content>
     </Page>
 </mvc:View>
