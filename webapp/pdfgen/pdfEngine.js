@@ -114,7 +114,7 @@ sap.ui.define([
             width: 160
           });
         } else {
-          doc.text(`\n\n${jsonData.project_details.site_contact_before.bypass_reason_text}`);
+          doc.text(`\n\n${jsonData.project_details.site_contact_before.bypass_reason_text || ""}`);
         }
         doc.font("Helvetica")
           .fontSize(12)
@@ -130,7 +130,7 @@ sap.ui.define([
             width: 160
           });
         } else {
-          doc.text(`\n\n${jsonData.project_details.site_contact_before.bypass_reason_text}`);
+          doc.text(`\n\n${jsonData.project_details.site_contact_before.bypass_reason_text || ""}`);
         }
         doc.lineWidth(2)
           .moveTo(xPointH, yPointH += 195)
