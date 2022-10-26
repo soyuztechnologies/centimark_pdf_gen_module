@@ -8,14 +8,18 @@ sap.ui.define([
 
   return {
     pdf: function (jsonData) {
-      var that = this;
+      var that = this,
+        page = 1,
+        reportName = 'WORK AUTHORIZATION AND SERVICE SUMMARY';
+      jsonData = JSON.parse(JSON.stringify(jsonData));
+      
       let header = (doc, logo) => {
         doc.image(logo, 148, 35, {
           width: 302
         })
           .fontSize(16)
           .font("Helvetica-Bold")
-          .text("WORK AUTHORIZATION AND SERVICE SUMMARY", 100, 120);
+          .text(reportName, 100, 120);
         // doc.moveDown();
         var xPointH = 45,
           yPointH = 145,
@@ -31,10 +35,10 @@ sap.ui.define([
           .fillColor("black")
           .font("Helvetica")
           .fontSize(12)
-          .text("Notification: " + jsonData.project_details.notification_number, xPointCol1, yPointCol1)
-          .text("Start Work Date: " + jsonData.project_details.start_work_date, xPointCol2, yPointCol2)
-          .text("PO Number: " + jsonData.project_details.po_number, xPointCol1, yPointCol1 += 20)
-          .text("Completed Work Date: " + jsonData.project_details.completed_work_date, xPointCol2, yPointCol2 += 20);
+          .text("Notification: " + (jsonData.project_details.notification_number || ""), xPointCol1, yPointCol1)
+          .text(jsonData.project_details.start_work_date ? `Start Work Date: ${jsonData.project_details.start_work_date}` : "", xPointCol2, yPointCol2)
+          .text("PO Number: " + (jsonData.project_details.po_number || ""), xPointCol1, yPointCol1 += 20)
+          .text(jsonData.project_details.completed_work_date ? `Completed Work Date: ${jsonData.project_details.completed_work_date}` : "", xPointCol2, yPointCol2 += 20);
         doc.rect(xPointH, yPointH += 85, 230, 25)
           .fill('#004d99')
           .font("Helvetica-Bold")
@@ -44,12 +48,12 @@ sap.ui.define([
           .fillColor("black")
           .font("Helvetica")
           .fontSize(12)
-          .text(jsonData.project_details.customer.name, xPointCol1, yPointCol1 = (yPointH + 40))
-          .text(jsonData.project_details.customer.address, xPointCol1, yPointCol1 += 20)
-          .text(jsonData.project_details.customer.city + ", " + jsonData.project_details.customer.state + " " + jsonData.project_details.customer.zip, xPointCol1, yPointCol1 += 20)
+          .text(jsonData.project_details.customer.name || "", xPointCol1, yPointCol1 = (yPointH + 40))
+          .text(jsonData.project_details.customer.address || "", xPointCol1, yPointCol1 += 20)
+          .text((jsonData.project_details.customer.city ? jsonData.project_details.customer.city + ", " : "") + (jsonData.project_details.customer.state || "") + " " + (jsonData.project_details.customer.zip || ""), xPointCol1, yPointCol1 += 20)
           .text("Attn: ", xPointCol1, yPointCol1 += 20)
-          .text(jsonData.project_details.customer.contact_name, xPointCol1, yPointCol1 += 20)
-          .text(jsonData.project_details.customer.contact_email, xPointCol1, yPointCol1 += 20);
+          .text(jsonData.project_details.customer.contact_name || "", xPointCol1, yPointCol1 += 20)
+          .text((jsonData.project_details.customer.contact_email || "").toLowerCase(), xPointCol1, yPointCol1 += 20);
         doc.rect(xPointH + 270, yPointH, 230, 25)
           .fill('#004d99')
           .font("Helvetica-Bold")
@@ -59,12 +63,12 @@ sap.ui.define([
           .fillColor("black")
           .font("Helvetica")
           .fontSize(12)
-          .text(jsonData.project_details.service_manager.name, xPointCol2 = (xPointH + 272), yPointCol2 = (yPointH + 40))
-          .text(jsonData.project_details.service_manager.address, xPointCol2, yPointCol2 += 20)
-          .text(jsonData.project_details.service_manager.city + ", " + jsonData.project_details.service_manager.state + " " + jsonData.project_details.service_manager.zip, xPointCol2, yPointCol2 += 20)
-          .text(jsonData.project_details.service_manager.email.toLowerCase(), xPointCol2, yPointCol2 += 20)
-          .text('Phone: ' + jsonData.project_details.service_manager.phone, xPointCol2, yPointCol2 += 20)
-          .text('Fax: ' + jsonData.project_details.service_manager.fax, xPointCol2, yPointCol2 += 20);
+          .text(jsonData.project_details.service_manager.name || "", xPointCol2 = (xPointH + 272), yPointCol2 = (yPointH + 40))
+          .text(jsonData.project_details.service_manager.address || "", xPointCol2, yPointCol2 += 20)
+          .text((jsonData.project_details.service_manager.city || "") + ", " + (jsonData.project_details.service_manager.state || "") + " " + (jsonData.project_details.service_manager.zip || ""), xPointCol2, yPointCol2 += 20)
+          .text((jsonData.project_details.service_manager.email || "").toLowerCase(), xPointCol2, yPointCol2 += 20)
+          .text('Phone: ' + (jsonData.project_details.service_manager.phone || ""), xPointCol2, yPointCol2 += 20)
+          .text('Fax: ' + (jsonData.project_details.service_manager.fax || ""), xPointCol2, yPointCol2 += 20);
         doc.rect(xPointH, yPointH += 160, 230, 25)
           .fill('#004d99')
           .font("Helvetica-Bold")
@@ -74,12 +78,12 @@ sap.ui.define([
           .fillColor("black")
           .font("Helvetica")
           .fontSize(12)
-          .text(jsonData.project_details.location.name, xPointCol1, yPointCol1 = (yPointH + 40))
-          .text(jsonData.project_details.location.address, xPointCol1, yPointCol1 += 20)
-          .text(jsonData.project_details.location.city + ", " + jsonData.project_details.location.state + " " + jsonData.project_details.location.zip, xPointCol1, yPointCol1 += 20)
+          .text(jsonData.project_details.location.name || "", xPointCol1, yPointCol1 = (yPointH + 40))
+          .text(jsonData.project_details.location.address || "", xPointCol1, yPointCol1 += 20)
+          .text((jsonData.project_details.location.city || "") + ", " + (jsonData.project_details.location.state || "") + " " + (jsonData.project_details.location.zip || ""), xPointCol1, yPointCol1 += 20)
           .text("Attn: ", xPointCol1, yPointCol1 += 20)
-          .text(jsonData.project_details.location.contact_name, xPointCol1, yPointCol1 += 20)
-          .text(jsonData.project_details.location.contact_email, xPointCol1, yPointCol1 += 20);
+          .text(jsonData.project_details.location.contact_name || "", xPointCol1, yPointCol1 += 20)
+          .text((jsonData.project_details.location.contact_email || "").toLowerCase(), xPointCol1, yPointCol1 += 20);
         doc.rect(xPointH + 270, yPointH, 230, 25)
           .fill('#004d99')
           .font("Helvetica-Bold")
@@ -89,19 +93,19 @@ sap.ui.define([
           .fillColor("black")
           .font("Helvetica")
           .fontSize(12)
-          .text(jsonData.project_details.sales_rep.name, xPointCol2 = (xPointH + 272), yPointCol2 = (yPointH + 40))
-          .text(jsonData.project_details.sales_rep.address, xPointCol2, yPointCol2 += 20)
-          .text(jsonData.project_details.sales_rep.city + ", " + jsonData.project_details.sales_rep.state + " " + jsonData.project_details.sales_rep.zip, xPointCol2, yPointCol2 += 20)
-          .text(jsonData.project_details.sales_rep.email, xPointCol2, yPointCol2 += 20)
-          .text('Phone: ' + jsonData.project_details.sales_rep.phone, xPointCol2, yPointCol2 += 20)
-          .text('Fax: ' + jsonData.project_details.sales_rep.fax, xPointCol2, yPointCol2 += 20);
+          .text(jsonData.project_details.sales_rep.name || "", xPointCol2 = (xPointH + 272), yPointCol2 = (yPointH + 40))
+          .text(jsonData.project_details.sales_rep.address || "", xPointCol2, yPointCol2 += 20)
+          .text((jsonData.project_details.sales_rep.city ? `${jsonData.project_details.sales_rep.city}, ` : "") + (jsonData.project_details.sales_rep.state || "") + " " + (jsonData.project_details.sales_rep.zip || ""), xPointCol2, yPointCol2 += 20)
+          .text((jsonData.project_details.sales_rep.email || "").toLowerCase(), xPointCol2, yPointCol2 += 20)
+          .text('Phone: ' + (jsonData.project_details.sales_rep.phone || ""), xPointCol2, yPointCol2 += 20)
+          .text('Fax: ' + (jsonData.project_details.sales_rep.fax || ""), xPointCol2, yPointCol2 += 20);
         doc.moveTo(xPointH, yPointH += 165)
           .lineTo(xPointH + doc.page.width - 90, yPointH)
           .stroke()
           .text("Site Contact: ", xPointCol1, yPointCol1 = (yPointH + 10))
           .fontSize(10)
           .font('Times-Bold')
-          .text(`${jsonData.project_details.site_contact_before.text}`, {
+          .text(`${jsonData.project_details.site_contact_before.text || ""}`, {
             width: 245,
             align: 'left'
           });
@@ -139,20 +143,21 @@ sap.ui.define([
           .fontSize(12)
           .text("Authorized signatory", xPointH, yPointH + 5)
           .text("Authorized signatory", xPointH + 260, yPointH + 5);
-        doc.addPage({ size: "A4", margins: { top: 45, bottom: 1, left: 45, right: 45 } })
-          .fontSize(16)
+        // doc.addPage({ size: "A4", margins: { top: 45, bottom: 1, left: 45, right: 45 } })
+        addPage(doc, page += 1);
+        doc.fontSize(16)
           .font("Helvetica-Bold")
           .text("BUILDING SECTION SUMMARY", 160, 35);
-        doc.lineWidth(1)
-          .moveTo(40, doc.page.height - 20)
-          .lineTo(doc.page.width - 45, doc.page.height - 20)
-          .stroke()
-          .fillColor('blue')
-          .fontSize(10)
-          .text("MyCentiMark.com", 40, doc.page.height - 16, {
-            link: `http://www.mycentimark.com/`,
-            underline: false
-          });
+        // doc.lineWidth(1)
+        //   .moveTo(40, doc.page.height - 20)
+        //   .lineTo(doc.page.width - 45, doc.page.height - 20)
+        //   .stroke()
+        //   .fillColor('blue')
+        //   .fontSize(10)
+        //   .text("MyCentiMark.com", 40, doc.page.height - 16, {
+        //     link: `http://www.mycentimark.com/`,
+        //     underline: false
+        //   });
         var rectX = 80, rectY = 55;
         jsonData.building_section_summary.forEach(building_section_summary => {
           doc.rect(rectX, (rectY += 27) - 25, 440, 25)
@@ -234,35 +239,40 @@ sap.ui.define([
             rectY = doc.y;
           });
         });
-        doc.addPage({ size: "A4", margins: { top: 45, bottom: 1, left: 45, right: 45 } });
+        // doc.addPage({ size: "A4", margins: { top: 45, bottom: 1, left: 45, right: 45 } });
+        // doc.lineWidth(1)
+        //   .moveTo(40, doc.page.height - 20)
+        //   .lineTo(doc.page.width - 45, doc.page.height - 20)
+        //   .stroke()
+        //   .fillColor('blue')
+        //   .fontSize(10)
+        //   .text("MyCentiMark.com", 40, doc.page.height - 16, {
+        //     link: `http://www.mycentimark.com/`,
+        //     underline: false
+        //   });
         rectX = 45;
         rectY = 45;
-        doc.lineWidth(1)
-          .moveTo(40, doc.page.height - 20)
-          .lineTo(doc.page.width - 45, doc.page.height - 20)
-          .stroke()
-          .fillColor('blue')
-          .fontSize(10)
-          .text("MyCentiMark.com", 40, doc.page.height - 16, {
-            link: `http://www.mycentimark.com/`,
-            underline: false
-          });
-        doc.x = rectX;
-        doc.y = rectY;
+        addPage(doc, page += 1);
         jsonData.buildings.forEach(building => {
-          if (doc.page.maxY() <= doc.y + 270) {
-            doc.addPage({ size: "A4", margins: { top: 45, bottom: 1, left: 45, right: 45 } });
-            rectY = 45;
-            doc.lineWidth(1)
-              .moveTo(40, doc.page.height - 20)
-              .lineTo(doc.page.width - 45, doc.page.height - 20)
-              .stroke()
-              .fillColor('blue')
-              .fontSize(10)
-              .text("MyCentiMark.com", 40, doc.page.height - 16, {
-                link: `http://www.mycentimark.com/`,
-                underline: false
-              });
+          // if (doc.page.maxY() <= doc.y + 270) {
+          //   doc.addPage({ size: "A4", margins: { top: 45, bottom: 1, left: 45, right: 45 } });
+          //   rectY = 45;
+          //   doc.lineWidth(1)
+          //     .moveTo(40, doc.page.height - 20)
+          //     .lineTo(doc.page.width - 45, doc.page.height - 20)
+          //     .stroke()
+          //     .fillColor('blue')
+          //     .fontSize(10)
+          //     .text("MyCentiMark.com", 40, doc.page.height - 16, {
+          //       link: `http://www.mycentimark.com/`,
+          //       underline: false
+          //     });
+          // }
+          // rectY = addPage(doc, page += 1, 270) ? 45 : rectY;
+          if (addPage(doc, page += 1, 270)) {
+            rectY = doc.y;
+          } else {
+            page -= 1;
           }
           doc.rect(rectX, (rectY += 27) - 25, doc.page.width - 90, 25)
             .fill('#004d99')
@@ -288,19 +298,25 @@ sap.ui.define([
           }
 
           (building.sections || []).forEach(section => {
-            if (doc.page.maxY() <= doc.y + 270) {
-              doc.addPage({ size: "A4", margins: { top: 45, bottom: 1, left: 45, right: 45 } });
-              rectY = 45;
-              doc.lineWidth(1)
-                .moveTo(40, doc.page.height - 20)
-                .lineTo(doc.page.width - 45, doc.page.height - 20)
-                .stroke()
-                .fillColor('blue')
-                .fontSize(10)
-                .text("MyCentiMark.com", 40, doc.page.height - 16, {
-                  link: `http://www.mycentimark.com/`,
-                  underline: false
-                });
+            // if (doc.page.maxY() <= doc.y + 270) {
+            //   doc.addPage({ size: "A4", margins: { top: 45, bottom: 1, left: 45, right: 45 } });
+            //   rectY = 45;
+            //   doc.lineWidth(1)
+            //     .moveTo(40, doc.page.height - 20)
+            //     .lineTo(doc.page.width - 45, doc.page.height - 20)
+            //     .stroke()
+            //     .fillColor('blue')
+            //     .fontSize(10)
+            //     .text("MyCentiMark.com", 40, doc.page.height - 16, {
+            //       link: `http://www.mycentimark.com/`,
+            //       underline: false
+            //     });
+            // }
+            // rectY = addPage(doc, page += 1, 270) ? 45 : rectY;
+            if (addPage(doc, page += 1, 270)) {
+              rectY = doc.y;
+            } else {
+              page -= 1;
             }
             doc.rect(rectX, (rectY += 27) - 25, doc.page.width - 90, 25)
               .fill('#004d99')
@@ -315,34 +331,35 @@ sap.ui.define([
             if (section.section_photo) {
               doc.image(`data:image/jpg;base64,${section.section_photo}`, rectX, (rectY += 182) - 180, { width: 300, height: 180 });
             }
-            (section.defects || []).forEach(defect => {
-              if (doc.page.maxY() <= doc.y + 270) {
-                doc.addPage({ size: "A4", margins: { top: 45, bottom: 1, left: 45, right: 45 } });
-                rectY = 45;
-                doc.lineWidth(1)
-                  .moveTo(40, doc.page.height - 20)
-                  .lineTo(doc.page.width - 45, doc.page.height - 20)
-                  .stroke()
-                  .fillColor('blue')
-                  .fontSize(10)
-                  .text("MyCentiMark.com", 40, doc.page.height - 16, {
-                    link: `http://www.mycentimark.com/`,
-                    underline: false
-                  });
+            if (section.defects) {
+              debugger;
+              if (addPage(doc, page += 1, 570)) {
+                rectY = doc.y;
+              } else {
+                page -= 1;
               }
               doc.rect(rectX, (rectY += 52) - 50, doc.page.width - 90, 50)
                 .fill('#004d99')
                 .fillColor("white")
                 .fontSize(14)
                 .text(`DEFECT SUMMARY FOR SECTION:`, rectX + 120, rectY - 42)
-                .text(`${defect.activity}`, rectX + 140, rectY - 20)
-                .rect(rectX, (rectY += 50) - 50, doc.page.width - 90, 50)
+                .text(`${section.defects.reduce((agg, item) => { return agg + (agg ? "/" : "") + (item.activity || "") }, '')}`, rectX + 140, rectY - 20);
+            }
+            (section.defects || []).forEach(defect => {
+              if (addPage(doc, page += 1, 270)) {
+                rectY = doc.y;
+              } else {
+                page -= 1;
+              }
+              // rectY = addPage(doc, page+=1, 270) ? doc.y : rectY;
+              doc.rect(rectX, (rectY += 50) - 50, doc.page.width - 90, 50)
                 .fill('#e68a00')
                 .fillColor("white")
-                .fontSize(14)
-                .text(`${defect.selection}`, rectX + 70, rectY - 42)
-                .text(`DEFECT PHOTO`, rectX + 65, rectY - 20)
-                .text(`REPAIR PHOTO`, doc.page.width - 220, rectY - 20);
+                .fontSize(12)
+                .text(`${defect.activity} / ${defect.selection}`, rectX + 70, rectY - 42);
+                var tempY = doc.y < rectY - 20 ? rectY - 20 : doc.y;
+                doc.text(`DEFECT PHOTO`, rectX + 65, tempY)
+                .text(`REPAIR PHOTO`, doc.page.width - 220, tempY);
               if (defect.defect_photo) {
                 doc.image(`data:image/jpg;base64,${defect.defect_photo}`, rectX, (rectY += 182) - 180, { width: 240, height: 180 });
               }
@@ -358,156 +375,301 @@ sap.ui.define([
                 .font("Helvetica")
                 .text(`${defect.comments}`, rectX + 7, doc.y + 4);
               rectY = doc.y + 2;
-            })
+            });
+            if (section.recommended_work) {
+              // rectY = addPage(doc, page += 1, 370) ? doc.y : rectY;
+              if (addPage(doc, page += 1, 570)) {
+                rectY = doc.y;
+              } else {
+                page -= 1;
+              }
+              doc.rect(rectX, (rectY += 52) - 50, doc.page.width - 90, 50)
+                .fill('#004d99')
+                .fillColor("white")
+                .fontSize(14)
+                .text(`RECOMMENDED WORK FOR SECTION:`, rectX + 120, rectY - 42)
+                .text(`${section.recommended_work.reduce((agg, item) => { return agg + (agg ? "/" : "") + (item.selection || "") }, '')}`, rectX + 140, rectY - 20);
+            }
+            (section.recommended_work || []).forEach(recommended_work => {
+              // rectY = addPage(doc, page += 1, 270) ? doc.y : rectY;
+              if (addPage(doc, page += 1, 270)) {
+                rectY = doc.y;
+              } else {
+                page -= 1;
+              }
+              doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
+                .fill('#e68a00')
+                .fillColor("white")
+                .fontSize(12)
+                .text(`RECOMMENDED WORK PHOTO`, rectX + 65, rectY - 17)
+                .text(`DESCRIPTION`, doc.page.width - 220, rectY - 17);
+              if (recommended_work.photo) {
+                doc.image(`data:image/jpeg;base64,${recommended_work.photo}`, rectX, (rectY += 182) - 180, { width: 240, height: 180 });
+              }
+              if (recommended_work.comments) {
+                doc.fillColor("black")
+                  .text(`${recommended_work.selection}`, doc.page.width - 285, rectY - 160, { width: 240, height: 180 })
+                  .text(`${recommended_work.comments}`, doc.page.width - 285, doc.y + 4, { width: 240, height: 180 });
+              }
+              // doc.fillColor('black')
+              //   .fontSize(9)
+              //   .font("Helvetica-Bold")
+              //   .text("Comments", rectX + 2, rectY += 5, {
+              //     underline: true
+              //   })
+              //   .font("Helvetica")
+              //   .text(`${defect.comments}`, rectX + 7, doc.y + 4);
+              // rectY = doc.y + 2;
+            });
           });
         });
-        doc.addPage({ size: "A4", margins: { top: 45, bottom: 1, left: 45, right: 45 } });
-        doc.lineWidth(1)
-          .moveTo(40, doc.page.height - 20)
-          .lineTo(doc.page.width - 45, doc.page.height - 20)
-          .stroke()
-          .fillColor('blue')
-          .fontSize(10)
-          .text("MyCentiMark.com", 40, doc.page.height - 16, {
-            link: `http://www.mycentimark.com/`,
-            underline: false
+        if (jsonData.labor_materials_summary) {
+          addPage(doc, page += 1);
+          // doc.addPage({ size: "A4", margins: { top: 45, bottom: 1, left: 45, right: 45 } });
+          // doc.lineWidth(1)
+          //   .moveTo(40, doc.page.height - 20)
+          //   .lineTo(doc.page.width - 45, doc.page.height - 20)
+          //   .stroke()
+          //   .fillColor('blue')
+          //   .fontSize(10)
+          //   .text("MyCentiMark.com", 40, doc.page.height - 16, {
+          //     link: `http://www.mycentimark.com/`,
+          //     underline: false
+          //   });
+          rectX = 45;
+          rectY = 45;
+          doc.rect(rectX, (rectY += 27) - 25, doc.page.width - 90, 25)
+            .fill('#004d99')
+            .fillColor("white")
+            .fontSize(14)
+            .text(`LABOR AND MATERIALS FOR: ${jsonData.project_details.notification_number}`, rectX + 80, rectY - 17);
+          doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
+            .fill('#e68a00')
+            .fillColor("white")
+            .fontSize(14)
+            .text(`Material`, rectX + 100, rectY - 17)
+            .text(`Total: $${jsonData.labor_materials_summary.material_total || '0'}`, rectX + 300, rectY - 17)
+            .fillColor("black")
+            .font('Helvetica')
+            .fontSize(10);
+          let maxY = doc.y;
+          jsonData.labor_materials_summary.materials = jsonData.labor_materials_summary.materials ? [{
+            material_description: "Description",
+            qty: "Quantity",
+            unit_price: 'Unite Price',
+            total: "Total"
+          }].concat(jsonData.labor_materials_summary.materials) : [];
+          (jsonData.labor_materials_summary.materials || []).forEach((material, dIndex) => {
+            doc.lineWidth(1)
+              .moveTo(rectX, doc.y)
+              .lineTo(doc.page.width - 45, doc.y)
+              .stroke();
+            rectY = doc.y + 12;
+            doc.text(`${material.material_description}`, rectX + 5, rectY, {
+              width: 115,
+              align: 'left'
+            });
+            maxY = maxY < doc.y ? doc.y : maxY;
+            doc.text(`${material.qty}`, rectX + 130, rectY, {
+              width: 115,
+              align: 'right'
+            });
+            maxY = maxY < doc.y ? doc.y : maxY;
+            doc.text(`${isNaN(material.unit_price) ? material.unit_price : '$' + material.unit_price}`, rectX + 250, rectY, {
+              width: 115,
+              align: 'right'
+            });
+            maxY = maxY < doc.y ? doc.y : maxY;
+            doc.text(`${isNaN(material.total) ? material.total : '$' + material.total}`, rectX + 370, rectY, {
+              width: 115,
+              align: 'right'
+            });
+            doc.y = maxY < doc.y ? doc.y : maxY;
+            doc.lineWidth(1)
+              .moveTo(rectX, rectY - 12)
+              .lineTo(rectX, doc.y)
+              .moveTo(rectX + 130, rectY - 12)
+              .lineTo(rectX + 130, doc.y)
+              .moveTo(rectX + 250, rectY - 12)
+              .lineTo(rectX + 250, doc.y)
+              .moveTo(rectX + 370, rectY - 12)
+              .lineTo(rectX + 370, doc.y)
+              .moveTo(rectX + doc.page.width - 90, rectY - 12)
+              .lineTo(rectX + doc.page.width - 90, doc.y)
+              .stroke();
           });
-        rectX = 45;
-        rectY = 45;
-        doc.rect(rectX, (rectY += 27) - 25, doc.page.width - 90, 25)
-          .fill('#004d99')
-          .fillColor("white")
-          .fontSize(14)
-          .text(`LABOR AND MATERIALS FOR: ${jsonData.project_details.notification_number}`, rectX + 80, rectY - 17)
-        doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
-          .fill('#e68a00')
-          .fillColor("white")
-          .fontSize(14)
-          .text(`Material`, rectX + 100, rectY - 17)
-          .text(`Total: $${jsonData.labor_materials_summary.material_total}`, rectX + 300, rectY - 17)
-          .fillColor("black")
-          .font('Helvetica')
-          .fontSize(10);
-        let maxY = doc.y;
-        jsonData.labor_materials_summary.materials = jsonData.labor_materials_summary.materials ? [{
-          material_description: "Description",
-          qty: "Quantity",
-          unit_price: 'Unite Price',
-          total: "Total"
-        }].concat(jsonData.labor_materials_summary.materials) : [];
-        (jsonData.labor_materials_summary.materials || []).forEach((material, dIndex) => {
           doc.lineWidth(1)
             .moveTo(rectX, doc.y)
             .lineTo(doc.page.width - 45, doc.y)
             .stroke();
-          rectY = doc.y + 12;
-          doc.text(`${material.material_description}`, rectX + 5, rectY, {
-            width: 114,
-            align: 'left'
-          });
-          maxY = maxY < doc.y ? doc.y : maxY;
-          doc.text(`${material.qty}`, rectX + 130, rectY, {
-            width: 114,
-            align: 'left'
-          });
-          maxY = maxY < doc.y ? doc.y : maxY;
-          doc.text(`${isNaN(material.unit_price) ? material.unit_price : '$' + material.unit_price}`, rectX + 250, rectY, {
-            width: 114,
-            align: 'left'
-          });
-          maxY = maxY < doc.y ? doc.y : maxY;
-          doc.text(`${isNaN(material.total) ? material.total : '$' + material.total}`, rectX + 370, rectY, {
-            width: 114,
-            align: 'left'
-          });
-          doc.y = maxY < doc.y ? doc.y : maxY;
-          doc.lineWidth(1)
-            .moveTo(rectX, rectY - 12)
-            .lineTo(rectX, doc.y)
-            .moveTo(rectX + 120, rectY - 12)
-            .lineTo(rectX + 120, doc.y)
-            .moveTo(rectX + 240, rectY - 12)
-            .lineTo(rectX + 240, doc.y)
-            .moveTo(rectX + 360, rectY - 12)
-            .lineTo(rectX + 360, doc.y)
-            .moveTo(rectX + doc.page.width - 90, rectY - 12)
-            .lineTo(rectX + doc.page.width - 90, doc.y)
-            .stroke();
-        });
-        doc.lineWidth(1)
-          .moveTo(rectX, doc.y)
-          .lineTo(doc.page.width - 45, doc.y)
-          .stroke();
-        rectY = doc.y;
-        doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
-          .fill('#e68a00')
-          .fillColor("white")
-          .fontSize(14)
-          .text(`Labor and Fees`, rectX + 100, rectY - 17)
-          .text(`Total: $${jsonData.labor_materials_summary.labor_and_fees_total}`, rectX + 300, rectY - 17)
-          .fillColor("black")
-          .font('Helvetica')
-          .fontSize(10);
-        maxY = doc.y;
+          rectY = doc.y;
+          doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
+            .fill('#e68a00')
+            .fillColor("white")
+            .fontSize(14)
+            .text(`Labor and Fees`, rectX + 100, rectY - 17)
+            .text(`Total: $${jsonData.labor_materials_summary.labor_and_fees_total}`, rectX + 300, rectY - 17)
+            .fillColor("black")
+            .font('Helvetica')
+            .fontSize(10);
+          maxY = doc.y;
 
-        jsonData.labor_materials_summary.labor_and_fees = jsonData.labor_materials_summary.labor_and_fees ? [{
-          type: "Fee Type",
-          qty: "Hours",
-          rate: 'Rate',
-          total: "Total"
-        }].concat(jsonData.labor_materials_summary.labor_and_fees) : [];
-        (jsonData.labor_materials_summary.labor_and_fees || []).forEach((labor_and_fees, dIndex) => {
+          jsonData.labor_materials_summary.labor_and_fees = jsonData.labor_materials_summary.labor_and_fees ? [{
+            type: "Fee Type",
+            qty: "Hours",
+            rate: 'Rate',
+            total: "Total"
+          }].concat(jsonData.labor_materials_summary.labor_and_fees) : [];
+          (jsonData.labor_materials_summary.labor_and_fees || []).forEach((labor_and_fees, dIndex) => {
+            doc.lineWidth(1)
+              .moveTo(rectX, doc.y)
+              .lineTo(doc.page.width - 45, doc.y)
+              .stroke();
+            rectY = doc.y + 12;
+            doc.text(`${labor_and_fees.type}`, rectX + 5, rectY, {
+              width: 115,
+              align: 'left'
+            });
+            maxY = maxY < doc.y ? doc.y : maxY;
+            doc.text(`${labor_and_fees.qty}`, rectX + 130, rectY, {
+              width: 115,
+              align: 'right'
+            });
+            maxY = maxY < doc.y ? doc.y : maxY;
+            doc.text(`${isNaN(labor_and_fees.rate) ? labor_and_fees.rate : '$' + labor_and_fees.rate}`, rectX + 250, rectY, {
+              width: 115,
+              align: 'right'
+            });
+            maxY = maxY < doc.y ? doc.y : maxY;
+            doc.text(`${isNaN(labor_and_fees.total) ? labor_and_fees.total : '$' + labor_and_fees.total}`, rectX + 370, rectY, {
+              width: 115,
+              align: 'right'
+            });
+            doc.y = maxY < doc.y ? doc.y : maxY;
+            doc.lineWidth(1)
+              .moveTo(rectX, rectY - 12)
+              .lineTo(rectX, doc.y)
+              .moveTo(rectX + 130, rectY - 12)
+              .lineTo(rectX + 130, doc.y)
+              .moveTo(rectX + 250, rectY - 12)
+              .lineTo(rectX + 250, doc.y)
+              .moveTo(rectX + 370, rectY - 12)
+              .lineTo(rectX + 370, doc.y)
+              .moveTo(rectX + doc.page.width - 90, rectY - 12)
+              .lineTo(rectX + doc.page.width - 90, doc.y)
+              .stroke();
+          });
           doc.lineWidth(1)
             .moveTo(rectX, doc.y)
-            .lineTo(doc.page.width - 45, doc.y)
-            .stroke();
-          rectY = doc.y + 12;
-          doc.text(`${labor_and_fees.type}`, rectX + 5, rectY, {
-            width: 114,
-            align: 'left'
-          });
-          maxY = maxY < doc.y ? doc.y : maxY;
-          doc.text(`${labor_and_fees.qty}`, rectX + 130, rectY, {
-            width: 114,
-            align: 'left'
-          });
-          maxY = maxY < doc.y ? doc.y : maxY;
-          doc.text(`${isNaN(labor_and_fees.rate) ? labor_and_fees.rate : '$' + labor_and_fees.rate}`, rectX + 250, rectY, {
-            width: 114,
-            align: 'left'
-          });
-          maxY = maxY < doc.y ? doc.y : maxY;
-          doc.text(`${isNaN(labor_and_fees.total) ? labor_and_fees.total : '$' + labor_and_fees.total}`, rectX + 370, rectY, {
-            width: 114,
-            align: 'left'
-          });
-          doc.y = maxY < doc.y ? doc.y : maxY;
-          doc.lineWidth(1)
-            .moveTo(rectX, rectY - 12)
-            .lineTo(rectX, doc.y)
-            .moveTo(rectX + 120, rectY - 12)
-            .lineTo(rectX + 120, doc.y)
-            .moveTo(rectX + 240, rectY - 12)
-            .lineTo(rectX + 240, doc.y)
-            .moveTo(rectX + 360, rectY - 12)
-            .lineTo(rectX + 360, doc.y)
-            .moveTo(rectX + doc.page.width - 90, rectY - 12)
             .lineTo(rectX + doc.page.width - 90, doc.y)
             .stroke();
-        });
-        doc.lineWidth(1)
-          .moveTo(rectX, doc.y)
-          .lineTo(rectX + doc.page.width - 90, doc.y)
-          .stroke();
-        rectY = doc.y;
-        doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
-          .fill('#e68a00')
-          .fillColor("white")
-          .fontSize(14)
-          .text(`TOTAL`, rectX + 100, rectY - 17)
-          .text(`Total: $${jsonData.labor_materials_summary.grand_total}`, rectX + 300, rectY - 17)
+          rectY = doc.y;
+          doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
+            .fill('#e68a00')
+            .fillColor("white")
+            .fontSize(14)
+            .text(`TOTAL`, rectX + 100, rectY - 17)
+            .text(`Total: $${jsonData.labor_materials_summary.grand_total}`, rectX + 300, rectY - 17);
+
+          // Status Section  
+          addPage(doc,page+=1, null);
+          rectX = 45;
+          rectY = 45;
+          doc.rect(rectX, (rectY += 27) - 25, doc.page.width - 90, 25)
+            .fill('#004d99')
+            .fillColor("white")
+            .fontSize(14)
+            .text(`Status Log from Tablet for Notification: ${jsonData.project_details.notification_number}`, rectX + 80, rectY - 17)
+            .fillColor("black")
+            .font('Helvetica')
+            .fontSize(10);
+          maxY = doc.y;
+          jsonData.status_log = jsonData.status_log ? [{
+            foreman_name: "Foreman Name",
+            date: "Date",
+            time: 'Time (EST)',
+            status: "Status",
+            elapsed_time: "Elapsed Time (Hrs)"
+          }].concat(jsonData.status_log) : [];
+          (jsonData.status_log || []).forEach((status_log, dIndex) => {
+            doc.lineWidth(1)
+              .moveTo(rectX, doc.y)
+              .lineTo(doc.page.width - 45, doc.y)
+              .stroke();
+            rectY = doc.y + 12;
+            doc.text(`${status_log.foreman_name}`, rectX + 5, rectY, {
+              width: 90,
+              align: 'left'
+            });
+            maxY = maxY < doc.y ? doc.y : maxY;
+            doc.text(`${status_log.date}`, rectX + 110, rectY, {
+              width: 80,
+              align: 'center'
+            });
+            maxY = maxY < doc.y ? doc.y : maxY;
+            doc.text(`${status_log.time}`, rectX + 205, rectY, {
+              width: 80,
+              align: 'right'
+            });
+            maxY = maxY < doc.y ? doc.y : maxY;
+            doc.text(`${status_log.status}`, rectX + 295, rectY, {
+              width: 100,
+              align: 'left'
+            });
+            maxY = maxY < doc.y ? doc.y : maxY;
+            doc.text(`${status_log.elapsed_time}`, rectX + 400, rectY, {
+              width: 100,
+              align: 'right'
+            });
+            doc.y = maxY < doc.y ? doc.y : maxY;
+            doc.lineWidth(1)
+              .moveTo(rectX, rectY - 12)
+              .lineTo(rectX, doc.y)
+              .moveTo(rectX + 110, rectY - 12)
+              .lineTo(rectX + 110, doc.y)
+              .moveTo(rectX + 200, rectY - 12)
+              .lineTo(rectX + 200, doc.y)
+              .moveTo(rectX + 290, rectY - 12)
+              .lineTo(rectX + 290, doc.y)
+              .moveTo(rectX + 400, rectY - 12)
+              .lineTo(rectX + 400, doc.y)
+              .moveTo(rectX + doc.page.width - 90, rectY - 12)
+              .lineTo(rectX + doc.page.width - 90, doc.y)
+              .stroke();
+          });
+          doc.lineWidth(1)
+            .moveTo(rectX, doc.y)
+            .lineTo(rectX + doc.page.width - 90, doc.y)
+            .stroke();
+          rectY = doc.y;
+        }
       }
-
+      let addPage = (doc, page = null, checkSpace = null) => {
+        if ((!checkSpace) || (doc.page.maxY() <= doc.y + checkSpace)) {
+          doc.addPage({ size: "A4", margins: { top: 45, bottom: 1, left: 45, right: 45 } });
+          doc.lineWidth(1)
+            .moveTo(40, doc.page.height - 20)
+            .lineTo(doc.page.width - 45, doc.page.height - 20)
+            .stroke()
+            .fillColor('blue')
+            .fontSize(10)
+            .text("MyCentiMark.com", 45, doc.page.height - 16, {
+              link: `http://www.mycentimark.com/`,
+              underline: false
+            })
+            .text(reportName, 190, doc.page.height - 16, {
+              underline: false
+            });
+          if (page) {
+            doc.text(`Page ${page}`, doc.page.width - 85, doc.page.height - 16);
+          }
+          doc.x = 45;
+          doc.y = 45;
+          return true;
+        } else {
+          return false;
+        }
+      }
       let niceDocument = (logo) => {
         var doc = new PDFDocument({
           size: "A4",
@@ -529,23 +691,23 @@ sap.ui.define([
           downloadLink.click();
         });
       }
-      that.toDataURL("pdfgen/cmLogo.png", function(logo){
+      that.toDataURL("pdfgen/CMLogotaglineHigh.png", function (logo) {
         niceDocument(logo);
       });
     },
-    toDataURL: function(src, callback){
+    toDataURL: function (src, callback) {
       var image = new Image();
       image.crossOrigin = 'Anonymous';
-      image.onload = function(){
-         var canvas = document.createElement('canvas');
-         var context = canvas.getContext('2d');
-         canvas.height = this.naturalHeight;
-         canvas.width = this.naturalWidth;
-         context.drawImage(this, 0, 0);
-         var dataURL = canvas.toDataURL('image/png');
-         callback(dataURL);
+      image.onload = function () {
+        var canvas = document.createElement('canvas');
+        var context = canvas.getContext('2d');
+        canvas.height = this.naturalHeight;
+        canvas.width = this.naturalWidth;
+        context.drawImage(this, 0, 0);
+        var dataURL = canvas.toDataURL('image/png');
+        callback(dataURL);
       };
       image.src = src;
-   }
+    }
   };
 });
