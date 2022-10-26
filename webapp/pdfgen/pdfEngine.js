@@ -612,7 +612,7 @@ sap.ui.define([
               align: 'right'
             });
             maxY = maxY < doc.y ? doc.y : maxY;
-            doc.text(`${status_log.status}`, rectX + 295, rectY, {
+            doc.text(`${status_log.status}`, rectX + 305, rectY, {
               width: 100,
               align: 'left'
             });
@@ -629,8 +629,8 @@ sap.ui.define([
               .lineTo(rectX + 110, doc.y)
               .moveTo(rectX + 200, rectY - 12)
               .lineTo(rectX + 200, doc.y)
-              .moveTo(rectX + 290, rectY - 12)
-              .lineTo(rectX + 290, doc.y)
+              .moveTo(rectX + 300, rectY - 12)
+              .lineTo(rectX + 300, doc.y)
               .moveTo(rectX + 400, rectY - 12)
               .lineTo(rectX + 400, doc.y)
               .moveTo(rectX + doc.page.width - 90, rectY - 12)
