@@ -1,7 +1,7 @@
 <mvc:View controllerName="centi.pdf.generator.pdfgenerator.controller.PDFGenerater"
     xmlns:mvc="sap.ui.core.mvc" displayBlock="true"
     xmlns="sap.m">
-    <Page id="page" title="{i18n>title}">
+    <Page id="page" title="Centimark PDF Gen Module">
         <content>
         <Text id="_IDGenText1"  class="sapUiMediumMarginTop sapUiMediumMarginBegin" text="WORK AUTHORIZATION AND SERVICE SUMMARY: "/>
         <Button id="idButton" class="sapUiMediumMargin" text="Generate❤️" press="onPDFGenerate"/>
