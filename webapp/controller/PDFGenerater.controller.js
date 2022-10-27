@@ -12,8 +12,9 @@ sap.ui.define([
       onInit: function () {
 
       },
-      onPDFGenerate: function () {
-        pdfEngine.pdf(this.jsonData);
+      onPDFGenerate: async function () {
+        const binary = await pdfEngine.pdf(this.jsonData, 'binary');
+        debugger;
       },
       //Put logo in images folder
       jsonData: {
