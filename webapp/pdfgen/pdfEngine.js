@@ -129,13 +129,7 @@ sap.ui.define([
               underline: true
             })
             .fillColor("black");
-          if (jsonData.project_details.site_contact_before.signature) {
-            doc.image(`data:image/png;base64, ${jsonData.project_details.site_contact_before.signature}`, xPointH + 60, yPointCol1 + 120, {
-              width: 160
-            });
-          } else {
-            doc.text(`\n\n${jsonData.project_details.site_contact_before.bypass_reason_text || ""}`);
-          }
+          var siteContactTextH = doc.y;
           doc.font("Helvetica")
             .fontSize(12)
             .text(`Site Contact: ${jsonData.project_details.site_contact_after.contact_name || ""}`, xPointH + 260, yPointCol1)
@@ -145,12 +139,29 @@ sap.ui.define([
               width: 245,
               align: 'left'
             });
-          if (jsonData.project_details.site_contact_after.signature) {
-            doc.image(`data:image/png;base64, ${jsonData.project_details.site_contact_after.signature}`, xPointH + 300, yPointCol1 + 120, {
+
+          yPointCol1 = doc.y > siteContactTextH ? doc.y : siteContactTextH;
+
+          if (jsonData.project_details.site_contact_before.signature) {
+            doc.image(`data:image/png;base64, ${jsonData.project_details.site_contact_before.signature}`, xPointH + 60, yPointCol1 + 5, {
               width: 160
             });
           } else {
-            doc.text(`\n\n${jsonData.project_details.site_contact_before.bypass_reason_text || ""}`);
+            doc.x = xPointCol1;
+            doc.font("Helvetica")
+              .fontSize(12)
+              .text(`\n\n${jsonData.project_details.site_contact_before.bypass_reason_text || ""}`);
+          }
+
+          if (jsonData.project_details.site_contact_after.signature) {
+            doc.image(`data:image/png;base64, ${jsonData.project_details.site_contact_after.signature}`, xPointH + 300, yPointCol1 + 5, {
+              width: 160
+            });
+          } else {
+            doc.x=xPointH + 260;
+            doc.font("Helvetica")
+              .fontSize(12)
+              .text(`\n\n${jsonData.project_details.site_contact_before.bypass_reason_text || ""}`);
           }
           doc.lineWidth(2)
             .moveTo(xPointH, yPointH += 195)
@@ -1287,13 +1298,7 @@ sap.ui.define([
               underline: true
             })
             .fillColor("black");
-          if (jsonData.project_details.site_contact_before.signature) {
-            doc.image(`data:image/png;base64, ${jsonData.project_details.site_contact_before.signature}`, xPointH + 60, yPointCol1 + 120, {
-              width: 160
-            });
-          } else {
-            doc.text(`\n\n${jsonData.project_details.site_contact_before.bypass_reason_text || ""}`);
-          }
+          var siteContactTextH = doc.y;
           doc.font("Helvetica")
             .fontSize(12)
             .text(`Site Contact: ${jsonData.project_details.site_contact_after.contact_name || ""}`, xPointH + 260, yPointCol1)
@@ -1303,12 +1308,29 @@ sap.ui.define([
               width: 245,
               align: 'left'
             });
-          if (jsonData.project_details.site_contact_after.signature) {
-            doc.image(`data:image/png;base64, ${jsonData.project_details.site_contact_after.signature}`, xPointH + 300, yPointCol1 + 120, {
+
+          yPointCol1 = doc.y > siteContactTextH ? doc.y : siteContactTextH;
+
+          if (jsonData.project_details.site_contact_before.signature) {
+            doc.image(`data:image/png;base64, ${jsonData.project_details.site_contact_before.signature}`, xPointH + 60, yPointCol1 + 5, {
               width: 160
             });
           } else {
-            doc.text(`\n\n${jsonData.project_details.site_contact_before.bypass_reason_text || ""}`);
+            doc.x = xPointCol1;
+            doc.font("Helvetica")
+              .fontSize(12)
+              .text(`\n\n${jsonData.project_details.site_contact_before.bypass_reason_text || ""}`);
+          }
+
+          if (jsonData.project_details.site_contact_after.signature) {
+            doc.image(`data:image/png;base64, ${jsonData.project_details.site_contact_after.signature}`, xPointH + 300, yPointCol1 + 5, {
+              width: 160
+            });
+          } else {
+            doc.x = xPointH + 260
+            doc.font("Helvetica")
+              .fontSize(12)
+              .text(`\n\n${jsonData.project_details.site_contact_before.bypass_reason_text || ""}`);
           }
           doc.lineWidth(2)
             .moveTo(xPointH, yPointH += 195)
