@@ -37,9 +37,10 @@ sap.ui.define([
             xPointCol2 = 290,
             yPointCol2 = 185;
           doc.rect(xPointH, yPointH, doc.page.width - 90, 25)
-            .fill('#004d99')
+            .fill('#00529C')
             .fillColor("white")
-            .fontSize(14);
+            .fontSize(14)
+            .font("Helvetica-Bold");
           doc.y = yPointH + 8;
           doc.text("PROJECT DETAILS", {
             width: doc.page.width - 90,
@@ -53,7 +54,7 @@ sap.ui.define([
             .text("PO Number: " + (jsonData.project_details.po_number || ""), xPointCol1, yPointCol1 += 20)
             .text(jsonData.project_details.completed_work_date ? `Completed Work Date: ${jsonData.project_details.completed_work_date}` : "", xPointCol2, yPointCol2 += 20);
           doc.rect(xPointH, yPointH += 85, 230, 25)
-            .fill('#004d99')
+            .fill('#00529C')
             .font("Helvetica-Bold")
             .fillColor("white")
             .fontSize(14)
@@ -68,7 +69,7 @@ sap.ui.define([
             .text(jsonData.project_details.customer.contact_name || "", xPointCol1, yPointCol1 += 20)
             .text((jsonData.project_details.customer.contact_email || "").toLowerCase(), xPointCol1, yPointCol1 += 20);
           doc.rect(xPointH + 270, yPointH, 230, 25)
-            .fill('#004d99')
+            .fill('#00529C')
             .font("Helvetica-Bold")
             .fillColor("white")
             .fontSize(14)
@@ -83,7 +84,7 @@ sap.ui.define([
             .text('Phone: ' + (jsonData.project_details.service_manager.phone || ""), xPointCol2, yPointCol2 += 20)
             .text('Fax: ' + (jsonData.project_details.service_manager.fax || ""), xPointCol2, yPointCol2 += 20);
           doc.rect(xPointH, yPointH += 160, 230, 25)
-            .fill('#004d99')
+            .fill('#00529C')
             .font("Helvetica-Bold")
             .fillColor("white")
             .fontSize(14)
@@ -98,7 +99,7 @@ sap.ui.define([
             .text(jsonData.project_details.location.contact_name || "", xPointCol1, yPointCol1 += 20)
             .text((jsonData.project_details.location.contact_email || "").toLowerCase(), xPointCol1, yPointCol1 += 20);
           doc.rect(xPointH + 270, yPointH, 230, 25)
-            .fill('#004d99')
+            .fill('#00529C')
             .font("Helvetica-Bold")
             .fillColor("white")
             .fontSize(14)
@@ -112,16 +113,22 @@ sap.ui.define([
             .text((jsonData.project_details.sales_rep.email || "").toLowerCase(), xPointCol2, yPointCol2 += 20)
             .text('Phone: ' + (jsonData.project_details.sales_rep.phone || ""), xPointCol2, yPointCol2 += 20)
             .text('Fax: ' + (jsonData.project_details.sales_rep.fax || ""), xPointCol2, yPointCol2 += 20);
-          doc.moveTo(xPointH, yPointH += 165)
+          doc.moveTo(xPointH, yPointH += 167)
             .lineTo(xPointH + doc.page.width - 90, yPointH)
             .stroke()
-            .text("Site Contact: ", xPointCol1, yPointCol1 = (yPointH + 10))
-            .fontSize(10)
-            .font('Times-Bold')
+            .text(`Site Contact: ${jsonData.project_details.site_contact_before.contact_name || ""}`, xPointCol1, yPointCol1 = (yPointH + 12))
+            .fontSize(8)
+            .font('Helvetica-Bold')
             .text(`${jsonData.project_details.site_contact_before.text || ""}`, {
               width: 245,
               align: 'left'
-            });
+            })
+            .fillColor("#00529C")
+            .text(`${jsonData.project_details.site_contact_before.url_text}`, {
+              link: jsonData.project_details.site_contact_before.url,
+              underline: true
+            })
+            .fillColor("black");
           if (jsonData.project_details.site_contact_before.signature) {
             doc.image(`data:image/png;base64, ${jsonData.project_details.site_contact_before.signature}`, xPointH + 60, yPointCol1 + 120, {
               width: 160
@@ -131,9 +138,9 @@ sap.ui.define([
           }
           doc.font("Helvetica")
             .fontSize(12)
-            .text("Site Contact: ", xPointH + 260, yPointCol1)
-            .fontSize(10)
-            .font('Times-Bold')
+            .text(`Site Contact: ${jsonData.project_details.site_contact_after.contact_name || ""}`, xPointH + 260, yPointCol1)
+            .fontSize(8)
+            .font('Helvetica-Bold')
             .text(`${jsonData.project_details.site_contact_after.text}`, {
               width: 245,
               align: 'left'
@@ -156,6 +163,8 @@ sap.ui.define([
             .fontSize(12)
             .text("Authorized signatory", xPointH, yPointH + 5)
             .text("Authorized signatory", xPointH + 260, yPointH + 5);
+
+
           addPage(doc, page += 1);
           doc.fontSize(16)
             .font("Helvetica-Bold")
@@ -163,13 +172,18 @@ sap.ui.define([
               width: doc.page.width - 90,
               align: "center"
             });
-
           var rectX = 80, rectY = 65;
           jsonData.building_section_summary.forEach(building_section_summary => {
+            if (addPage(doc, page += 1, 90)) {
+              rectY = doc.y;
+            } else {
+              page -= 1;
+            }
             doc.rect(rectX, (rectY += 27) - 25, 440, 25)
-              .fill('#004d99')
+              .fill('#00529C')
               .fillColor("white")
               .fontSize(14)
+              .font("Helvetica-Bold")
               .text(`BUILDING: ${building_section_summary.building_name}`, rectX + 80, rectY - 17)
               .fillColor("black")
               .font('Helvetica')
@@ -201,10 +215,16 @@ sap.ui.define([
               .stroke();
             rectY = doc.y;
             (building_section_summary.sections_summary || []).forEach(section_summary => {
+              if (addPage(doc, page += 1, 90)) {
+                rectY = doc.y;
+              } else {
+                page -= 1;
+              }
               doc.rect(rectX, (rectY += 25) - 25, 440, 25)
-                .fill('#e68a00')
+                .fill('#f7b344')
                 .fillColor("white")
                 .fontSize(14)
+                .font("Helvetica-Bold")
                 .text(`SECTION: ${building_section_summary.building_name}`, rectX + 82, rectY - 17)
                 .fillColor("black")
                 .font('Helvetica')
@@ -263,40 +283,40 @@ sap.ui.define([
               rectY = doc.y;
             });
           });
-
           rectX = 45;
           rectY = 45;
-          addPage(doc, page += 1);
-
           jsonData.building_summary.forEach(building_summary => {
-
-            if (addPage(doc, page += 1, 300)) {
-              rectY = doc.y;
-            } else {
-              page -= 1;
-            }
+            rectX = 45;
+            rectY = 45;
+            addPage(doc, page += 1);
             doc.rect(rectX, (rectY += 27) - 25, doc.page.width - 90, 25)
-              .fill('#004d99')
+              .fill('#00529C')
               .fillColor("white")
-              .fontSize(14);
+              .fontSize(14)
+              .font("Helvetica-Bold");
             doc.y = rectY - 17;
+            doc.x = rectX;
             doc.text(`BUILDING: ${building_summary.building_name}`, {
               width: doc.page.width - 90,
               align: "center"
             })
               .rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
-              .fill('#e68a00')
+              .fill('#f7b344')
               .fillColor("white")
               .fontSize(14)
+              .font("Helvetica-Bold")
               .text(`BUILDING PHOTO`, rectX + 80, rectY - 17);
             if (building_summary.building_photo) {
               doc.image(`data:image/jpg;base64,${building_summary.building_photo}`, rectX, (rectY += 182) - 180, { width: 300, height: 180 });
             }
             if (building_summary.aerial_photo_url) {
               let arlPhtY = building_summary.building_photo ? rectY - 90 : (rectY += 45) - 25;
-              doc.fillColor('blue')
-                .fontSize(11)
-                .text("Building Aerial View Photo", rectX + 330, arlPhtY, {
+              doc.y = arlPhtY;
+              doc.x = rectX + 302;
+              doc.fillColor("#00529C")
+                .fontSize(9)
+                .text("Building Aerial View Photo", {
+                  align: "center",
                   link: `${building_summary.aerial_photo_url}`,
                   underline: true
                 });
@@ -319,9 +339,10 @@ sap.ui.define([
               doc.x = rectX;
               rectY = doc.y;
               doc.rect(rectX, (rectY += 27) - 25, doc.page.width - 90, 25)
-                .fill('#004d99')
+                .fill('#00529C')
                 .fillColor("white")
-                .fontSize(14);
+                .fontSize(14)
+                .font("Helvetica-Bold");
               doc.y = rectY - 17;
               doc.text(`COMPONENT`, {
                 width: (doc.page.width - 45) / 2,
@@ -388,9 +409,10 @@ sap.ui.define([
               doc.x = rectX;
               rectY = doc.y;
               doc.rect(rectX, (rectY += 27) - 25, doc.page.width - 90, 25)
-                .fill('#004d99')
+                .fill('#00529C')
                 .fillColor("white")
-                .fontSize(14);
+                .fontSize(14)
+                .font("Helvetica-Bold");
 
               doc.y = rectY - 17;
               doc.text(`RATING`, {
@@ -415,7 +437,7 @@ sap.ui.define([
                 .font('Helvetica')
                 .fontSize(10);
               building_summary.inspection_matrix.forEach(inspection_matrix => {
-                if (addPage(doc, page += 1, 45)) {
+                if (addPage(doc, page += 1, 90)) {
                   rectY = doc.y;
                 } else {
                   page -= 1;
@@ -425,10 +447,6 @@ sap.ui.define([
                   .lineTo(doc.page.width - 65, doc.y)
                   .stroke();
                 rectY = doc.y + 12;
-                doc.text(`${inspection_matrix.rating === "RN" ? "X" : "+"}`, rectX, rectY, {
-                  width: doc.page.width * 1 / 5,
-                  align: 'center'
-                });
                 doc.text(`${inspection_matrix.component}`, (doc.page.width * 1 / 5) + 70, rectY, {
                   width: doc.page.width * 2 / 5,
                   align: 'left'
@@ -437,6 +455,21 @@ sap.ui.define([
                   width: doc.page.width * 2 / 5,
                   align: 'left'
                 });
+                doc.lineWidth(doc.y - rectY + 12)
+                  .lineCap('butt')
+                  .moveTo(rectX, rectY)
+                  .lineTo((doc.page.width * 1 / 5) + 40, rectY)
+                  .fillAndStroke(`${inspection_matrix.rating === "RN" ? "#C4222F" : "#5AA755"}`, `${inspection_matrix.rating === "RN" ? "#C4222F" : "#5AA755"}`)
+                  .lineWidth(1)
+                  .fillAndStroke("black", "black")
+                  .fillColor("white")
+                  .font("Helvetica-Bold")
+                  .text(`${inspection_matrix.rating === "RN" ? "X" : "+"}`, rectX, rectY, {
+                    width: doc.page.width * 1 / 5,
+                    align: 'center'
+                  })
+                  .font("Helvetica")
+                  .fillColor("black");
                 doc.lineWidth(1)
                   .moveTo(rectX, rectY - 12)
                   .lineTo(rectX, doc.y)
@@ -458,27 +491,45 @@ sap.ui.define([
                 .lineCap('butt')
                 .moveTo(100, rectY)
                 .lineTo(130, rectY)
-                .fillAndStroke("red", "red")
+                .fillAndStroke("#5AA755", "#5AA755")
                 .moveTo(340, rectY)
                 .lineTo(370, rectY)
-                .fillAndStroke("green", "green")
+                .fillAndStroke("#C4222F", "#C4222F")
+                .fillColor("black")
+                .fontSize(14)
+                .font("Helvetica-Bold")
+                .fillColor("white")
+                .text("+", 112, rectY - 5)
                 .fillColor("black")
                 .fontSize(12)
-                .text("X    Inspection - Repair Needed", 112, rectY - 5)
-                .text("+    Inspection - No Defects", 352, rectY - 5);
+                .text("    Inspection - No Defects", 120, rectY - 5)
+                .fillColor("white")
+                .fontSize(14)
+                .text("x", 352, rectY - 5)
+                .fillColor("black")
+                .fontSize(12)
+                .text("    Inspection - Repair Needed", 360, rectY - 5)
+                .font("Helvetica");
+              rectY = doc.y;
             }
+            // addPage(doc, page += 1);
 
             if (building_summary.building_specifications) {
-              if (addPage(doc, page += 1, 270)) {
-                rectY = doc.y;
-              } else {
-                page -= 1;
-              }
+              addPage(doc, page += 1);
+              rectX = doc.x;
+              rectY = doc.y;
+              // if (addPage(doc, page += 1, 270)) {
+              //   rectY = doc.y;
+              // } else {
+              //   page -= 1;
+              // }
               doc.rect(rectX, (rectY += 52) - 50, doc.page.width - 90, 50)
-                .fill('#004d99')
+                .fill('#00529C')
                 .fillColor("white")
-                .fontSize(14);
+                .fontSize(14)
+                .font("Helvetica-Bold");
               doc.y = rectY - 42;
+              doc.x = rectX;
               doc.text(`BUILDING SPECIFICATIONS FOR:`, {
                 width: doc.page.width - 90,
                 align: "center"
@@ -495,9 +546,10 @@ sap.ui.define([
                   page -= 1;
                 }
                 doc.rect(rectX, (rectY += 27) - 25, doc.page.width - 90, 25)
-                  .fill('#e68a00')
+                  .fill('#f7b344')
                   .fillColor("white")
-                  .fontSize(12);
+                  .fontSize(14)
+                  .font("Helvetica-Bold");
 
                 doc.text(`INSPECTION PHOTO`, rectX + 65, rectY - 17)
                   .text(`DESCRIPTION`, doc.page.width - 220, rectY - 17);
@@ -507,7 +559,8 @@ sap.ui.define([
                 }
                 if (building_specifications.description) {
                   doc.fillColor("black")
-                    .text(`${building_specifications.description}`, doc.page.width - 285, rectY - 160, { width: 240, height: 180 });
+                    .fontSize(10)
+                    .text(`${building_specifications.description}`, doc.page.width - 285, rectY - 160, { width: 240, height: 180, underline: true });
                 }
                 rectY = doc.y > rectY ? doc.y : rectY;
                 doc.x = rectX;
@@ -524,18 +577,21 @@ sap.ui.define([
                   rectY += 20;
                 }
                 doc.rect(rectX, (rectY += 27) - 25, doc.page.width - 90, 25)
-                  .fill('#004d99')
+                  .fill('#00529C')
                   .fillColor("white")
-                  .fontSize(14);
+                  .fontSize(14)
+                  .font("Helvetica-Bold");
                 doc.y = rectY - 17;
+                doc.x = rectX;
                 doc.text(`SECTION: ${section_details.name}`, {
                   width: doc.page.width - 90,
                   align: "center"
                 })
                   .rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
-                  .fill('#e68a00')
+                  .fill('#f7b344')
                   .fillColor("white")
                   .fontSize(14)
+                  .font("Helvetica-Bold")
                   .text(`SECTION OVERVIEW PHOTO`, rectX + 60, rectY - 17)
                   .text(`COMMENTS`, rectX + 360, rectY - 17);;
                 if (section_details.section_overview_photo) {
@@ -546,6 +602,7 @@ sap.ui.define([
                   doc.x = rectX + 330;
                   doc.fillColor('black')
                     .fontSize(11)
+                    .font("Helvetica")
                     .text(`${section_details.comments}`, {
                       width: doc.page.width - 390,
                       align: "left"
@@ -571,9 +628,10 @@ sap.ui.define([
                   doc.x = rectX;
                   rectY = doc.y;
                   doc.rect(rectX, (rectY += 27) - 25, doc.page.width - 90, 25)
-                    .fill('#004d99')
+                    .fill('#00529C')
                     .fillColor("white")
-                    .fontSize(14);
+                    .fontSize(14)
+                    .font("Helvetica-Bold");
                   doc.y = rectY - 17;
                   doc.text(`COMPONENT`, {
                     width: (doc.page.width - 45) / 2,
@@ -640,9 +698,10 @@ sap.ui.define([
                   doc.x = rectX;
                   rectY = doc.y;
                   doc.rect(rectX, (rectY += 27) - 25, doc.page.width - 90, 25)
-                    .fill('#004d99')
+                    .fill('#00529C')
                     .fillColor("white")
-                    .fontSize(14);
+                    .fontSize(14)
+                    .font("Helvetica-Bold");
 
                   doc.y = rectY - 17;
                   doc.text(`RATING`, {
@@ -677,10 +736,6 @@ sap.ui.define([
                       .lineTo(doc.page.width - 65, doc.y)
                       .stroke();
                     rectY = doc.y + 12;
-                    doc.text(`${maintenance_activity_matrix.rating === "RN" ? "X" : "+"}`, rectX, rectY, {
-                      width: doc.page.width * 1 / 5,
-                      align: 'center'
-                    });
                     doc.text(`${maintenance_activity_matrix.component}`, (doc.page.width * 1 / 5) + 70, rectY, {
                       width: doc.page.width * 2 / 5,
                       align: 'left'
@@ -689,6 +744,21 @@ sap.ui.define([
                       width: doc.page.width * 2 / 5,
                       align: 'left'
                     });
+                    doc.lineWidth(doc.y - rectY + 12)
+                      .lineCap('butt')
+                      .moveTo(rectX, rectY)
+                      .lineTo((doc.page.width * 1 / 5) + 40, rectY)
+                      .fillAndStroke(`${maintenance_activity_matrix.rating === "RN" ? "#C4222F" : "#5AA755"}`, `${maintenance_activity_matrix.rating === "RN" ? "#C4222F" : "#5AA755"}`)
+                      .lineWidth(1)
+                      .fillAndStroke("black", "black")
+                      .fillColor("white")
+                      .font("Helvetica-Bold")
+                      .text(`${maintenance_activity_matrix.rating === "RN" ? "X" : "+"}`, rectX, rectY, {
+                        width: doc.page.width * 1 / 5,
+                        align: 'center'
+                      })
+                      .font("Helvetica")
+                      .fillColor("black");
                     doc.lineWidth(1)
                       .moveTo(rectX, rectY - 12)
                       .lineTo(rectX, doc.y)
@@ -710,15 +780,25 @@ sap.ui.define([
                     .lineCap('butt')
                     .moveTo(100, rectY)
                     .lineTo(130, rectY)
-                    .fillAndStroke("red", "red")
+                    .fillAndStroke("#5AA755", "#5AA755")
                     .moveTo(340, rectY)
                     .lineTo(370, rectY)
-                    .fillAndStroke("green", "green")
+                    .fillAndStroke("#C4222F", "#C4222F")
+                    .fillColor("black")
+                    .fontSize(14)
+                    .font("Helvetica-Bold")
+                    .fillColor("white")
+                    .text("+", 112, rectY - 5)
                     .fillColor("black")
                     .fontSize(12)
-                    .text("X    Maintenance - Repair Needed", 112, rectY - 5)
-                    .text("+    Maintenance - No Defects", 352, rectY - 5)
-                    .fillAndStroke("black", "black");
+                    .text("    Maintenance - No Defects", 120, rectY - 5)
+                    .fillColor("white")
+                    .fontSize(14)
+                    .text("x", 352, rectY - 5)
+                    .fillColor("black")
+                    .fontSize(12)
+                    .text("    Maintenance - Repair Needed", 360, rectY - 5)
+                    .font("Helvetica");
                   doc.x = rectX;
                 }
                 if (section_details.inspection_matrix) {
@@ -739,9 +819,10 @@ sap.ui.define([
                   doc.x = rectX;
                   rectY = doc.y;
                   doc.rect(rectX, (rectY += 27) - 25, doc.page.width - 90, 25)
-                    .fill('#004d99')
+                    .fill('#00529C')
                     .fillColor("white")
-                    .fontSize(14);
+                    .fontSize(14)
+                    .font("Helvetica-Bold");
 
                   doc.y = rectY - 17;
                   doc.text(`RATING`, {
@@ -776,10 +857,6 @@ sap.ui.define([
                       .lineTo(doc.page.width - 65, doc.y)
                       .stroke();
                     rectY = doc.y + 12;
-                    doc.text(`${inspection_matrix.rating === "RN" ? "X" : "+"}`, rectX, rectY, {
-                      width: doc.page.width * 1 / 5,
-                      align: 'center'
-                    });
                     doc.text(`${inspection_matrix.component}`, (doc.page.width * 1 / 5) + 70, rectY, {
                       width: doc.page.width * 2 / 5,
                       align: 'left'
@@ -788,6 +865,21 @@ sap.ui.define([
                       width: doc.page.width * 2 / 5,
                       align: 'left'
                     });
+                    doc.lineWidth(doc.y - rectY + 12)
+                      .lineCap('butt')
+                      .moveTo(rectX, rectY)
+                      .lineTo((doc.page.width * 1 / 5) + 40, rectY)
+                      .fillAndStroke(`${inspection_matrix.rating === "RN" ? "#C4222F" : "#5AA755"}`, `${inspection_matrix.rating === "RN" ? "#C4222F" : "#5AA755"}`)
+                      .lineWidth(1)
+                      .fillAndStroke("black", "black")
+                      .fillColor('white')
+                      .font("Helvetica-Bold")
+                      .text(`${inspection_matrix.rating === "RN" ? "X" : "+"}`, rectX, rectY, {
+                        width: doc.page.width * 1 / 5,
+                        align: 'center'
+                      })
+                      .font("Helvetica")
+                      .fillColor('black');
                     doc.lineWidth(1)
                       .moveTo(rectX, rectY - 12)
                       .lineTo(rectX, doc.y)
@@ -809,14 +901,25 @@ sap.ui.define([
                     .lineCap('butt')
                     .moveTo(100, rectY)
                     .lineTo(130, rectY)
-                    .fillAndStroke("red", "red")
+                    .fillAndStroke("#5AA755", "#5AA755")
                     .moveTo(340, rectY)
                     .lineTo(370, rectY)
-                    .fillAndStroke("green", "green")
+                    .fillAndStroke("#C4222F", "#C4222F")
+                    .fillColor("black")
+                    .fontSize(14)
+                    .font("Helvetica-Bold")
+                    .fillColor("white")
+                    .text("+", 112, rectY - 5)
                     .fillColor("black")
                     .fontSize(12)
-                    .text("X    Inspection - Repair Needed", 112, rectY - 5)
-                    .text("+    Inspection - No Defects", 352, rectY - 5);
+                    .text("    Inspection - No Defects", 120, rectY - 5)
+                    .fillColor("white")
+                    .fontSize(14)
+                    .text("x", 352, rectY - 5)
+                    .fillColor("black")
+                    .fontSize(12)
+                    .text("    Inspection - Repair Needed", 360, rectY - 5)
+                    .font("Helvetica");
                   doc.x = rectX;
                 }
                 if (section_details.section_inspections) {
@@ -826,9 +929,10 @@ sap.ui.define([
                     page -= 1;
                   }
                   doc.rect(rectX, (rectY += 52) - 50, doc.page.width - 90, 50)
-                    .fill('#004d99')
+                    .fill('#00529C')
                     .fillColor("white")
                     .fontSize(14)
+                    .font("Helvetica-Bold")
                     .text(`INSPECTIONS FOR SECTION:`, rectX, rectY - 42, {
                       align: "center",
                       width: doc.page.width - 90
@@ -844,22 +948,24 @@ sap.ui.define([
                       page -= 1;
                     }
                     doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
-                      .fill('#e68a00')
+                      .fill('#f7b344')
                       .fillColor("white")
-                      .fontSize(12)
+                      .fontSize(14)
+                      .font("Helvetica-Bold")
                       .text(`INSPECTION PHOTO`, rectX + 65, rectY - 17)
-                      .text(`DESCRIPTION`, doc.page.width - 220, rectY - 17);
+                      .text(`DESCRIPTION`, doc.page.width - 220, rectY - 17)
+                      .font("Helvetica");
                     if (section_inspections.inspection_photo) {
                       doc.image(`data:image/jpeg;base64,${section_inspections.inspection_photo}`, rectX, (rectY += 182) - 180, { width: 240, height: 180 });
                     }
                     doc.fillColor("black")
                       .fontSize(10)
                       .font("Helvetica-Bold")
-                      .text(`${section_inspections.description || ""}`, doc.page.width - 285, section_inspections.inspection_photo ? rectY - 160 : rectY + 20, { width: 240, height: 180 })
+                      .text(`${section_inspections.description || ""}`, doc.page.width - 285, section_inspections.inspection_photo ? rectY - 160 : rectY + 20, { width: 240, height: 180, underline: true })
                       .font("Helvetica")
                       .text(`${section_inspections.description_text || ""}`, doc.page.width - 275, doc.y, { width: 230, height: 180 })
                       .font("Helvetica-Bold")
-                      .text(`${section_inspections.comments ? "Comments" : ""}`, doc.page.width - 285, doc.y + 4, { width: 240, height: 180 })
+                      .text(`${section_inspections.comments ? "Comments" : ""}`, doc.page.width - 285, doc.y + 4, { width: 240, height: 180, underline: true })
                       .font("Helvetica")
                       .text(`${section_inspections.comments || ""}`, doc.page.width - 275, doc.y + 4, { width: 230, height: 180 });
                     rectY = doc.y > rectY ? doc.y + 2 : rectY + 2;
@@ -872,9 +978,10 @@ sap.ui.define([
                     page -= 1;
                   }
                   doc.rect(rectX, (rectY += 52) - 50, doc.page.width - 90, 50)
-                    .fill('#004d99')
+                    .fill('#00529C')
                     .fillColor("white")
                     .fontSize(14)
+                    .font("Helvetica-Bold")
                     .text(`MAINTENANCE ACTIVITIES WITH NO DEFECTS FOR SECTION:`, rectX, rectY - 42, {
                       align: "center",
                       width: doc.page.width - 90
@@ -890,9 +997,10 @@ sap.ui.define([
                       page -= 1;
                     }
                     doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
-                      .fill('#e68a00')
+                      .fill('#f7b344')
                       .fillColor("white")
-                      .fontSize(12)
+                      .fontSize(14)
+                      .font("Helvetica-Bold")
                       .text(`MAINTENANCE PHOTO`, rectX + 65, rectY - 17)
                       .text(`DESCRIPTION`, doc.page.width - 220, rectY - 17);
                     if (section_maintenance_activities.maintenance_photo) {
@@ -901,11 +1009,11 @@ sap.ui.define([
                     doc.fillColor("black")
                       .fontSize(10)
                       .font("Helvetica-Bold")
-                      .text(`${section_maintenance_activities.description || ""}`, doc.page.width - 285, (section_maintenance_activities.maintenance_photo ? rectY - 160 : rectY + 20), { width: 240 })
+                      .text(`${section_maintenance_activities.description || ""}`, doc.page.width - 285, (section_maintenance_activities.maintenance_photo ? rectY - 160 : rectY + 20), { width: 240, underline: true })
                       .font("Helvetica")
                       .text(`${section_maintenance_activities.description_text || ""}`, doc.page.width - 275, doc.y, { width: 230, height: 180 })
                       .font("Helvetica-Bold")
-                      .text(`${section_maintenance_activities.comments ? "Comments" : ""}`, doc.page.width - 285, doc.y + 4, { width: 240 })
+                      .text(`${section_maintenance_activities.comments ? "Comments" : ""}`, doc.page.width - 285, doc.y + 4, { width: 240, underline: true })
                       .font("Helvetica")
                       .text(`${section_maintenance_activities.comments || ""}`, doc.page.width - 275, doc.y + 4, { width: 230 });
                     rectY = doc.y > rectY ? doc.y + 2 : rectY + 2;
@@ -922,9 +1030,10 @@ sap.ui.define([
             rectX = 45;
             rectY = 45;
             doc.rect(rectX, (rectY += 27) - 25, doc.page.width - 90, 25)
-              .fill('#004d99')
+              .fill('#00529C')
               .fillColor("white")
               .fontSize(14)
+              .font("Helvetica-Bold")
               .text(`Status Log from Tablet for Notification: ${jsonData.project_details.notification_number}`, rectX + 80, rectY - 17)
               .fillColor("black")
               .font('Helvetica')
@@ -997,7 +1106,7 @@ sap.ui.define([
               .moveTo(45, doc.page.height - 20)
               .lineTo(doc.page.width - 45, doc.page.height - 20)
               .stroke()
-              .fillColor('blue')
+              .fillColor("#00529C")
               .fontSize(10)
               .text("MyCentiMark.com", 45, doc.page.height - 16, {
                 link: `http://www.mycentimark.com/`,
@@ -1008,7 +1117,7 @@ sap.ui.define([
               })
               .fillColor('black');
             if (page) {
-              doc.text(`Page ${page}`, doc.page.width - 85, doc.page.height - 16);
+              doc.text(`Page ${page}`, doc.page.width - 100, doc.page.height - 16);
             }
             doc.x = 45;
             doc.y = 45;
@@ -1068,13 +1177,17 @@ sap.ui.define([
         jsonData = JSON.parse(JSON.stringify(jsonData));
 
         let header = (doc, logo) => {
-          doc.image(logo, 148, 35, {
-            width: 302
-          })
-            .fontSize(16)
+          doc.image(logo, (doc.page.width - 302) / 2, 35, {
+            width: 302,
+            align: "center"
+          });
+          doc.y = 120;
+          doc.fontSize(16)
             .font("Helvetica-Bold")
-            .text(reportName, 100, 120);
-          // doc.moveDown();
+            .text(reportName, {
+              width: doc.page.width - 90,
+              align: "center"
+            });
           var xPointH = 45,
             yPointH = 145,
             xPointCol1 = 47,
@@ -1082,10 +1195,15 @@ sap.ui.define([
             xPointCol2 = 290,
             yPointCol2 = 185;
           doc.rect(xPointH, yPointH, doc.page.width - 90, 25)
-            .fill('#004d99')
+            .fill('#00529C')
             .fillColor("white")
             .fontSize(14)
-            .text("PROJECT DETAILS", 210, yPointH + 8)
+            .font("Helvetica-Bold");
+          doc.y = yPointH + 8;
+          doc.text("PROJECT DETAILS", {
+            width: doc.page.width - 90,
+            align: "center"
+          })
             .fillColor("black")
             .font("Helvetica")
             .fontSize(12)
@@ -1094,7 +1212,7 @@ sap.ui.define([
             .text("PO Number: " + (jsonData.project_details.po_number || ""), xPointCol1, yPointCol1 += 20)
             .text(jsonData.project_details.completed_work_date ? `Completed Work Date: ${jsonData.project_details.completed_work_date}` : "", xPointCol2, yPointCol2 += 20);
           doc.rect(xPointH, yPointH += 85, 230, 25)
-            .fill('#004d99')
+            .fill('#00529C')
             .font("Helvetica-Bold")
             .fillColor("white")
             .fontSize(14)
@@ -1109,7 +1227,7 @@ sap.ui.define([
             .text(jsonData.project_details.customer.contact_name || "", xPointCol1, yPointCol1 += 20)
             .text((jsonData.project_details.customer.contact_email || "").toLowerCase(), xPointCol1, yPointCol1 += 20);
           doc.rect(xPointH + 270, yPointH, 230, 25)
-            .fill('#004d99')
+            .fill('#00529C')
             .font("Helvetica-Bold")
             .fillColor("white")
             .fontSize(14)
@@ -1124,7 +1242,7 @@ sap.ui.define([
             .text('Phone: ' + (jsonData.project_details.service_manager.phone || ""), xPointCol2, yPointCol2 += 20)
             .text('Fax: ' + (jsonData.project_details.service_manager.fax || ""), xPointCol2, yPointCol2 += 20);
           doc.rect(xPointH, yPointH += 160, 230, 25)
-            .fill('#004d99')
+            .fill('#00529C')
             .font("Helvetica-Bold")
             .fillColor("white")
             .fontSize(14)
@@ -1139,7 +1257,7 @@ sap.ui.define([
             .text(jsonData.project_details.location.contact_name || "", xPointCol1, yPointCol1 += 20)
             .text((jsonData.project_details.location.contact_email || "").toLowerCase(), xPointCol1, yPointCol1 += 20);
           doc.rect(xPointH + 270, yPointH, 230, 25)
-            .fill('#004d99')
+            .fill('#00529C')
             .font("Helvetica-Bold")
             .fillColor("white")
             .fontSize(14)
@@ -1153,16 +1271,22 @@ sap.ui.define([
             .text((jsonData.project_details.sales_rep.email || "").toLowerCase(), xPointCol2, yPointCol2 += 20)
             .text('Phone: ' + (jsonData.project_details.sales_rep.phone || ""), xPointCol2, yPointCol2 += 20)
             .text('Fax: ' + (jsonData.project_details.sales_rep.fax || ""), xPointCol2, yPointCol2 += 20);
-          doc.moveTo(xPointH, yPointH += 165)
+          doc.moveTo(xPointH, yPointH += 167)
             .lineTo(xPointH + doc.page.width - 90, yPointH)
             .stroke()
-            .text("Site Contact: ", xPointCol1, yPointCol1 = (yPointH + 10))
-            .fontSize(10)
-            .font('Times-Bold')
+            .text(`Site Contact: ${jsonData.project_details.site_contact_before.contact_name || ""}`, xPointCol1, yPointCol1 = (yPointH + 12))
+            .fontSize(8)
+            .font('Helvetica-Bold')
             .text(`${jsonData.project_details.site_contact_before.text || ""}`, {
               width: 245,
               align: 'left'
-            });
+            })
+            .fillColor("#00529C")
+            .text(`${jsonData.project_details.site_contact_before.url_text}`, {
+              link: jsonData.project_details.site_contact_before.url,
+              underline: true
+            })
+            .fillColor("black");
           if (jsonData.project_details.site_contact_before.signature) {
             doc.image(`data:image/png;base64, ${jsonData.project_details.site_contact_before.signature}`, xPointH + 60, yPointCol1 + 120, {
               width: 160
@@ -1172,9 +1296,9 @@ sap.ui.define([
           }
           doc.font("Helvetica")
             .fontSize(12)
-            .text("Site Contact: ", xPointH + 260, yPointCol1)
-            .fontSize(10)
-            .font('Times-Bold')
+            .text(`Site Contact: ${jsonData.project_details.site_contact_after.contact_name || ""}`, xPointH + 260, yPointCol1)
+            .fontSize(8)
+            .font('Helvetica-Bold')
             .text(`${jsonData.project_details.site_contact_after.text}`, {
               width: 245,
               align: 'left'
@@ -1197,6 +1321,7 @@ sap.ui.define([
             .fontSize(12)
             .text("Authorized signatory", xPointH, yPointH + 5)
             .text("Authorized signatory", xPointH + 260, yPointH + 5);
+
           addPage(doc, page += 1);
           doc.fontSize(16)
             .font("Helvetica-Bold")
@@ -1205,15 +1330,17 @@ sap.ui.define([
           var rectX = 80, rectY = 55;
           jsonData.building_section_summary.forEach(building_section_summary => {
             doc.rect(rectX, (rectY += 27) - 25, 440, 25)
-              .fill('#004d99')
+              .fill('#00529C')
               .fillColor("white")
               .fontSize(14)
+              .font("Helvetica-Bold")
               .text(`${building_section_summary.building_name}`, rectX + 80, rectY - 17);
             (building_section_summary.sections || []).forEach(bsSection => {
               doc.rect(rectX, (rectY += 25) - 25, 440, 25)
-                .fill('#e68a00')
+                .fill('#f7b344')
                 .fillColor("white")
                 .fontSize(14)
+                .font("Helvetica-Bold")
                 .text(`${bsSection.section_name}`, rectX + 82, rectY - 17)
                 .fillColor("black")
                 .font('Helvetica')
@@ -1295,21 +1422,23 @@ sap.ui.define([
               page -= 1;
             }
             doc.rect(rectX, (rectY += 27) - 25, doc.page.width - 90, 25)
-              .fill('#004d99')
+              .fill('#00529C')
               .fillColor("white")
               .fontSize(14)
+              .font("Helvetica-Bold")
               .text(`BUILDING: ${building.building_name}`, rectX + 80, rectY - 17)
               .rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
-              .fill('#e68a00')
+              .fill('#f7b344')
               .fillColor("white")
               .fontSize(14)
+              .font("Helvetica-Bold")
               .text(`${building.building_comments ? building.building_comments : 'N/A'}`, rectX + 65, rectY - 17);
             if (building.building_photo) {
               doc.image(`data:image/jpg;base64,${building.building_photo}`, rectX, (rectY += 182) - 180, { width: 300, height: 180 });
             }
             if (building.aerial_photo_url) {
               let arlPhtY = building.building_photo ? rectY - 90 : (rectY += 45) - 25;
-              doc.fillColor('blue')
+              doc.fillColor("#00529C")
                 .fontSize(11)
                 .text("Building Aerial View Photo", rectX + 330, arlPhtY, {
                   link: `${building.aerial_photo_url}`,
@@ -1325,14 +1454,16 @@ sap.ui.define([
                 page -= 1;
               }
               doc.rect(rectX, (rectY += 27) - 25, doc.page.width - 90, 25)
-                .fill('#004d99')
+                .fill('#00529C')
                 .fillColor("white")
                 .fontSize(14)
+                .font("Helvetica-Bold")
                 .text(`SECTION: ${section.section_name}`, rectX + 80, rectY - 17)
                 .rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
-                .fill('#e68a00')
+                .fill('#f7b344')
                 .fillColor("white")
                 .fontSize(14)
+                .font("Helvetica-Bold")
                 .text(`${section.section_comments}`, rectX + 65, rectY - 17);
               if (section.section_photo) {
                 doc.image(`data:image/jpg;base64,${section.section_photo}`, rectX, (rectY += 182) - 180, { width: 300, height: 180 });
@@ -1344,9 +1475,10 @@ sap.ui.define([
                   page -= 1;
                 }
                 doc.rect(rectX, (rectY += 52) - 50, doc.page.width - 90, 50)
-                  .fill('#004d99')
+                  .fill('#00529C')
                   .fillColor("white")
                   .fontSize(14)
+                  .font("Helvetica-Bold")
                   .text(`DEFECT SUMMARY FOR SECTION:`, rectX + 120, rectY - 42)
                   .text(`${section.defects.reduce((agg, item) => { return agg + (agg ? "/" : "") + (item.activity || "") }, '')}`, rectX + 140, rectY - 20);
               }
@@ -1357,9 +1489,10 @@ sap.ui.define([
                   page -= 1;
                 }
                 doc.rect(rectX, (rectY += 50) - 50, doc.page.width - 90, 50)
-                  .fill('#e68a00')
+                  .fill('#f7b344')
                   .fillColor("white")
-                  .fontSize(12)
+                  .fontSize(14)
+                  .font("Helvetica-Bold")
                   .text(`${defect.activity} / ${defect.selection}`, rectX + 70, rectY - 42);
                 var tempY = doc.y < rectY - 20 ? rectY - 20 : doc.y;
                 doc.text(`DEFECT PHOTO`, rectX + 65, tempY)
@@ -1387,9 +1520,10 @@ sap.ui.define([
                   page -= 1;
                 }
                 doc.rect(rectX, (rectY += 52) - 50, doc.page.width - 90, 50)
-                  .fill('#004d99')
+                  .fill('#00529C')
                   .fillColor("white")
                   .fontSize(14)
+                  .font("Helvetica-Bold")
                   .text(`RECOMMENDED WORK FOR SECTION:`, rectX + 120, rectY - 42)
                   .text(`${section.recommended_work.reduce((agg, item) => { return agg + (agg ? "/" : "") + (item.selection || "") }, '')}`, rectX + 140, rectY - 20);
               }
@@ -1400,9 +1534,9 @@ sap.ui.define([
                   page -= 1;
                 }
                 doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
-                  .fill('#e68a00')
+                  .fill('#f7b344')
                   .fillColor("white")
-                  .fontSize(12)
+                  .fontSize(14)
                   .text(`RECOMMENDED WORK PHOTO`, rectX + 65, rectY - 17)
                   .text(`DESCRIPTION`, doc.page.width - 220, rectY - 17);
                 if (recommended_work.photo) {
@@ -1423,14 +1557,16 @@ sap.ui.define([
             rectX = 45;
             rectY = 45;
             doc.rect(rectX, (rectY += 27) - 25, doc.page.width - 90, 25)
-              .fill('#004d99')
+              .fill('#00529C')
               .fillColor("white")
               .fontSize(14)
+              .font("Helvetica-Bold")
               .text(`LABOR AND MATERIALS FOR: ${jsonData.project_details.notification_number}`, rectX + 80, rectY - 17);
             doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
-              .fill('#e68a00')
+              .fill('#f7b344')
               .fillColor("white")
               .fontSize(14)
+              .font("Helvetica-Bold")
               .text(`Material`, rectX + 100, rectY - 17)
               .text(`Total: $${jsonData.labor_materials_summary.material_total || '0'}`, rectX + 300, rectY - 17)
               .fillColor("black")
@@ -1488,9 +1624,10 @@ sap.ui.define([
               .stroke();
             rectY = doc.y;
             doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
-              .fill('#e68a00')
+              .fill('#f7b344')
               .fillColor("white")
               .fontSize(14)
+              .font("Helvetica-Bold")
               .text(`Labor and Fees`, rectX + 100, rectY - 17)
               .text(`Total: $${jsonData.labor_materials_summary.labor_and_fees_total}`, rectX + 300, rectY - 17)
               .fillColor("black")
@@ -1549,9 +1686,10 @@ sap.ui.define([
               .stroke();
             rectY = doc.y;
             doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
-              .fill('#e68a00')
+              .fill('#f7b344')
               .fillColor("white")
               .fontSize(14)
+              .font("Helvetica-Bold")
               .text(`TOTAL`, rectX + 100, rectY - 17)
               .text(`Total: $${jsonData.labor_materials_summary.grand_total}`, rectX + 300, rectY - 17);
           }
@@ -1561,9 +1699,10 @@ sap.ui.define([
             rectX = 45;
             rectY = 45;
             doc.rect(rectX, (rectY += 27) - 25, doc.page.width - 90, 25)
-              .fill('#004d99')
+              .fill('#00529C')
               .fillColor("white")
               .fontSize(14)
+              .font("Helvetica-Bold")
               .text(`Status Log from Tablet for Notification: ${jsonData.project_details.notification_number}`, rectX + 80, rectY - 17)
               .fillColor("black")
               .font('Helvetica')
@@ -1636,7 +1775,7 @@ sap.ui.define([
               .moveTo(40, doc.page.height - 20)
               .lineTo(doc.page.width - 45, doc.page.height - 20)
               .stroke()
-              .fillColor('blue')
+              .fillColor("#00529C")
               .fontSize(10)
               .text("MyCentiMark.com", 45, doc.page.height - 16, {
                 link: `http://www.mycentimark.com/`,
@@ -1646,7 +1785,7 @@ sap.ui.define([
                 underline: false
               });
             if (page) {
-              doc.text(`Page ${page}`, doc.page.width - 85, doc.page.height - 16);
+              doc.text(`Page ${page}`, doc.page.width - 100, doc.page.height - 16);
             }
             doc.x = 45;
             doc.y = 45;
