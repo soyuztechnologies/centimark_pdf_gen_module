@@ -158,7 +158,7 @@ sap.ui.define([
               width: 160
             });
           } else {
-            doc.x=xPointH + 260;
+            doc.x = xPointH + 260;
             doc.font("Helvetica")
               .fontSize(12)
               .text(`\n\n${jsonData.project_details.site_contact_before.bypass_reason_text || ""}`);
@@ -236,7 +236,7 @@ sap.ui.define([
                 .fillColor("white")
                 .fontSize(14)
                 .font("Helvetica-Bold")
-                .text(`SECTION: ${building_section_summary.building_name}`, rectX + 82, rectY - 17)
+                .text(`SECTION: ${section_summary.section_name || ''}`, rectX + 82, rectY - 17)
                 .fillColor("black")
                 .font('Helvetica')
                 .fontSize(10);
@@ -982,7 +982,108 @@ sap.ui.define([
                     rectY = doc.y > rectY ? doc.y + 2 : rectY + 2;
                   });
                 }
-                if (section_details.section_maintenance_activities) {
+                // if (section_details.section_maintenance_activities) {
+                //   if (addPage(doc, page += 1, 570)) {
+                //     rectY = doc.y;
+                //   } else {
+                //     page -= 1;
+                //   }
+                //   doc.rect(rectX, (rectY += 52) - 50, doc.page.width - 90, 50)
+                //     .fill('#00529C')
+                //     .fillColor("white")
+                //     .fontSize(14)
+                //     .font("Helvetica-Bold")
+                //     .text(`MAINTENANCE ACTIVITIES FOR SECTION:`, rectX, rectY - 42, {
+                //       align: "center",
+                //       width: doc.page.width - 90
+                //     })
+                //     .text(`${section_details.name}`, rectX, rectY - 20, {
+                //       align: "center",
+                //       width: doc.page.width - 90
+                //     });
+                //   (section_details.section_maintenance_activities || []).forEach(section_maintenance_activities => {
+                //     if (addPage(doc, page += 1, 270)) {
+                //       rectY = doc.y;
+                //     } else {
+                //       page -= 1;
+                //     }
+                //     doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
+                //       .fill('#f7b344')
+                //       .fillColor("white")
+                //       .fontSize(14)
+                //       .font("Helvetica-Bold")
+                //       .text(`MAINTENANCE PHOTO`, rectX + 65, rectY - 17)
+                //       .text(`DESCRIPTION`, doc.page.width - 220, rectY - 17);
+                //     if (section_maintenance_activities.maintenance_photo) {
+                //       doc.image(`data:image/jpeg;base64,${section_maintenance_activities.maintenance_photo}`, rectX, (rectY += 182) - 180, { width: 240, height: 180 });
+                //     }
+                //     doc.fillColor("black")
+                //       .fontSize(10)
+                //       .font("Helvetica-Bold")
+                //       .text(`${section_maintenance_activities.description || ""}`, doc.page.width - 285, (section_maintenance_activities.maintenance_photo ? rectY - 160 : rectY + 20), { width: 240, underline: true })
+                //       .font("Helvetica")
+                //       .text(`${section_maintenance_activities.description_text || ""}`, doc.page.width - 275, doc.y, { width: 230, height: 180 })
+                //       .font("Helvetica-Bold")
+                //       .text(`${section_maintenance_activities.comments ? "Comments" : ""}`, doc.page.width - 285, doc.y + 4, { width: 240, underline: true })
+                //       .font("Helvetica")
+                //       .text(`${section_maintenance_activities.comments || ""}`, doc.page.width - 275, doc.y + 4, { width: 230 });
+                //     rectY = doc.y > rectY ? doc.y + 2 : rectY + 2;
+                //     doc.x = rectX;
+                //   });
+                // }
+                if (section_details.section_maint_act_defects) {
+                  if (addPage(doc, page += 1, 570)) {
+                    rectY = doc.y;
+                  } else {
+                    page -= 1;
+                  }
+                  doc.rect(rectX, (rectY += 52) - 50, doc.page.width - 90, 50)
+                    .fill('#00529C')
+                    .fillColor("white")
+                    .fontSize(14)
+                    .font("Helvetica-Bold")
+                    .text(`MAINTENANCE ACTIVITIES WITH DEFECTS FOR SECTION:`, rectX, rectY - 42, {
+                      align: "center",
+                      width: doc.page.width - 90
+                    })
+                    .text(`${section_details.name}`, rectX, rectY - 20, {
+                      align: "center",
+                      width: doc.page.width - 90
+                    });
+                  (section_details.section_maint_act_defects || []).forEach(section_maint_act_defects => {
+                    if (addPage(doc, page += 1, 270)) {
+                      rectY = doc.y;
+                    } else {
+                      page -= 1;
+                    }
+                    doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
+                      .fill('#f7b344')
+                      .fillColor("white")
+                      .fontSize(14)
+                      .font("Helvetica-Bold")
+                      .text(`MAINTENANCE PHOTO`, rectX + 65, rectY - 17)
+                      .text(`REPAIR PHOTO`, doc.page.width - 220, rectY - 17);
+                    if (section_maint_act_defects.maintenance_photo) {
+                      doc.image(`data:image/jpeg;base64,${section_maint_act_defects.maintenance_photo}`, rectX, (rectY += 182) - 180, { width: 250, height: 180 });
+                    }
+                    if (section_maint_act_defects.repair_photo) {
+                      doc.image(`data:image/jpeg;base64,${section_maint_act_defects.repair_photo}`, doc.page.width - 295, (rectY) - 180, { width: 250, height: 180 });
+                    }
+                    doc.fillColor("black")
+                      .fontSize(10)
+                      .font("Helvetica-Bold")
+                      .text(`${section_maint_act_defects.description || ""}`, rectX, rectY += 5, { width: doc.page.width - 90, underline: true })
+                      .font("Helvetica")
+                      .text(`${section_maint_act_defects.description_text || ""}`, rectX + 10, doc.y, { width: doc.page.width - 100 })
+                      .font("Helvetica-Bold")
+                      .text(`${section_maint_act_defects.comments ? "Comments" : ""}`, rectX, doc.y + 4, { width: doc.page.width - 90, underline: true })
+                      .font("Helvetica")
+                      .text(`${section_maint_act_defects.comments || ""}`, rectX + 10, doc.y + 4, { width: doc.page.width - 100 });
+                    rectY = doc.y > rectY ? doc.y + 2 : rectY + 2;
+                    doc.x = rectX;
+                  });
+                }
+                if (section_details.section_maint_act_no_defects) {
                   if (addPage(doc, page += 1, 570)) {
                     rectY = doc.y;
                   } else {
@@ -1001,7 +1102,7 @@ sap.ui.define([
                       align: "center",
                       width: doc.page.width - 90
                     });
-                  (section_details.section_maintenance_activities || []).forEach(section_maintenance_activities => {
+                  (section_details.section_maint_act_no_defects || []).forEach(section_maint_act_no_defects => {
                     if (addPage(doc, page += 1, 270)) {
                       rectY = doc.y;
                     } else {
@@ -1014,19 +1115,19 @@ sap.ui.define([
                       .font("Helvetica-Bold")
                       .text(`MAINTENANCE PHOTO`, rectX + 65, rectY - 17)
                       .text(`DESCRIPTION`, doc.page.width - 220, rectY - 17);
-                    if (section_maintenance_activities.maintenance_photo) {
-                      doc.image(`data:image/jpeg;base64,${section_maintenance_activities.maintenance_photo}`, rectX, (rectY += 182) - 180, { width: 240, height: 180 });
+                    if (section_maint_act_no_defects.maintenance_photo) {
+                      doc.image(`data:image/jpeg;base64,${section_maint_act_no_defects.maintenance_photo}`, rectX, (rectY += 182) - 180, { width: 240, height: 180 });
                     }
                     doc.fillColor("black")
                       .fontSize(10)
                       .font("Helvetica-Bold")
-                      .text(`${section_maintenance_activities.description || ""}`, doc.page.width - 285, (section_maintenance_activities.maintenance_photo ? rectY - 160 : rectY + 20), { width: 240, underline: true })
+                      .text(`${section_maint_act_no_defects.description || ""}`, doc.page.width - 285, (section_maint_act_no_defects.maintenance_photo ? rectY - 160 : rectY + 20), { width: 240, underline: true })
                       .font("Helvetica")
-                      .text(`${section_maintenance_activities.description_text || ""}`, doc.page.width - 275, doc.y, { width: 230, height: 180 })
+                      .text(`${section_maint_act_no_defects.description_text || ""}`, doc.page.width - 275, doc.y, { width: 230, height: 180 })
                       .font("Helvetica-Bold")
-                      .text(`${section_maintenance_activities.comments ? "Comments" : ""}`, doc.page.width - 285, doc.y + 4, { width: 240, underline: true })
+                      .text(`${section_maint_act_no_defects.comments ? "Comments" : ""}`, doc.page.width - 285, doc.y + 4, { width: 240, underline: true })
                       .font("Helvetica")
-                      .text(`${section_maintenance_activities.comments || ""}`, doc.page.width - 275, doc.y + 4, { width: 230 });
+                      .text(`${section_maint_act_no_defects.comments || ""}`, doc.page.width - 275, doc.y + 4, { width: 230 });
                     rectY = doc.y > rectY ? doc.y + 2 : rectY + 2;
                     doc.x = rectX;
                   });
@@ -1114,22 +1215,22 @@ sap.ui.define([
           if ((!checkSpace) || (doc.page.maxY() <= doc.y + checkSpace)) {
             doc.addPage({ size: paperSize, margins: { top: 45, bottom: 1, left: 45, right: 45 } });
             doc.lineWidth(1)
-              .moveTo(45, doc.page.height - 20)
-              .lineTo(doc.page.width - 45, doc.page.height - 20)
+              .moveTo(45, doc.page.height - 28)
+              .lineTo(doc.page.width - 45, doc.page.height - 28)
               .stroke()
               .fillColor("#00529C")
               .fontSize(10)
-              .text("MyCentiMark.com", 45, doc.page.height - 16, {
+              .text("MyCentiMark.com", 45, doc.page.height - 24, {
                 link: `http://www.mycentimark.com/`,
                 underline: false
               })
-              .text(reportName, 190, doc.page.height - 16, {
+              .text(reportName, 190, doc.page.height - 24, {
                 underline: false
-              })
-              .fillColor('black');
+              });
             if (page) {
-              doc.text(`Page ${page}`, doc.page.width - 100, doc.page.height - 16);
+              doc.text(`Page ${page}`, doc.page.width - 100, doc.page.height - 24);
             }
+            doc.fillColor('black');
             doc.x = 45;
             doc.y = 45;
             return true;
@@ -1345,29 +1446,44 @@ sap.ui.define([
             .text("Authorized signatory", xPointH + 260, yPointH + 5);
 
           addPage(doc, page += 1);
-          doc.fontSize(16)
-            .font("Helvetica-Bold")
-            .text("BUILDING SECTION SUMMARY", 160, 35);
 
           var rectX = 80, rectY = 55;
+          doc.fontSize(16)
+            .font("Helvetica-Bold")
+            .text("BUILDING SECTION SUMMARY", rectX, 35, {
+              width: 440,
+              align: "center"
+            });
+
           jsonData.building_section_summary.forEach(building_section_summary => {
             doc.rect(rectX, (rectY += 27) - 25, 440, 25)
               .fill('#00529C')
               .fillColor("white")
               .fontSize(14)
               .font("Helvetica-Bold")
-              .text(`${building_section_summary.building_name}`, rectX + 80, rectY - 17);
+              .text(`BUILDING: ${building_section_summary.building_name}`, rectX, rectY - 17, {
+                width: 440,
+                align: "center"
+              });
             (building_section_summary.sections || []).forEach(bsSection => {
               doc.rect(rectX, (rectY += 25) - 25, 440, 25)
                 .fill('#f7b344')
                 .fillColor("white")
                 .fontSize(14)
                 .font("Helvetica-Bold")
-                .text(`${bsSection.section_name}`, rectX + 82, rectY - 17)
+                .text(`SECTION: ${bsSection.section_name}`, rectX, rectY - 17, {
+                  width: 440,
+                  align: "center"
+                })
                 .fillColor("black")
                 .font('Helvetica')
                 .fontSize(10);
               (bsSection.defects || []).forEach((defect, dIndex) => {
+                if (addPage(doc, page += 1, 100)) {
+                  rectY = doc.y;
+                } else {
+                  page -= 1;
+                }
                 doc.lineWidth(1)
                   .moveTo(rectX, doc.y)
                   .lineTo(520, doc.y)
@@ -1394,9 +1510,16 @@ sap.ui.define([
                   .lineTo(rectX + 270, doc.y)
                   .moveTo(rectX + 440, rectY - 12)
                   .lineTo(rectX + 440, doc.y)
+                  .moveTo(rectX, doc.y)
+                  .lineTo(520, doc.y)
                   .stroke();
               });
               (bsSection.recommended_work || []).forEach((recommended_work, dIndex) => {
+                if (addPage(doc, page += 1, 100)) {
+                  rectY = doc.y;
+                } else {
+                  page -= 1;
+                }
                 doc.lineWidth(1)
                   .moveTo(rectX, doc.y)
                   .lineTo(520, doc.y)
@@ -1423,12 +1546,14 @@ sap.ui.define([
                   .lineTo(rectX + 270, doc.y)
                   .moveTo(rectX + 440, rectY - 12)
                   .lineTo(rectX + 440, doc.y)
+                  .moveTo(rectX, doc.y)
+                  .lineTo(520, doc.y)
                   .stroke();
               });
-              doc.lineWidth(1)
-                .moveTo(rectX, doc.y)
-                .lineTo(520, doc.y)
-                .stroke();
+              // doc.lineWidth(1)
+              //   .moveTo(rectX, doc.y)
+              //   .lineTo(520, doc.y)
+              //   .stroke();
               rectY = doc.y;
             });
           });
@@ -1448,22 +1573,34 @@ sap.ui.define([
               .fillColor("white")
               .fontSize(14)
               .font("Helvetica-Bold")
-              .text(`BUILDING: ${building.building_name}`, rectX + 80, rectY - 17)
+              .text(`BUILDING: ${building.building_name}`, rectX, rectY - 17, {
+                width: doc.page.width - 90,
+                align: "center"
+              })
               .rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
               .fill('#f7b344')
               .fillColor("white")
               .fontSize(14)
               .font("Helvetica-Bold")
-              .text(`${building.building_comments ? building.building_comments : 'N/A'}`, rectX + 65, rectY - 17);
+              .text(`BUILDING PHOTO`, rectX + 65, rectY - 17)
+              .text('COMMENTS', rectX + 350, rectY - 17);
             if (building.building_photo) {
               doc.image(`data:image/jpg;base64,${building.building_photo}`, rectX, (rectY += 182) - 180, { width: 300, height: 180 });
             }
             if (building.aerial_photo_url) {
-              let arlPhtY = building.building_photo ? rectY - 90 : (rectY += 45) - 25;
+              let arlPhtY = building.building_photo ? rectY - 110 : (rectY += 45) - 25;
+              doc.fillColor("black")
+                .fontSize(10)
+                .text(`${building.building_comments ? building.building_comments : ''}`, doc.page.width / 2 + 45, arlPhtY, {
+                  width: doc.page.width / 2 - 90,
+                  align: "center"
+                })
               doc.fillColor("#00529C")
-                .fontSize(11)
-                .text("Building Aerial View Photo", rectX + 330, arlPhtY, {
+                .fontSize(10)
+                .text("Building Aerial View Photo", (doc.page.width) / 2 + 45, doc.y, {
                   link: `${building.aerial_photo_url}`,
+                  width: doc.page.width / 2 - 90,
+                  align: "center",
                   underline: true
                 });
             }
@@ -1480,16 +1617,30 @@ sap.ui.define([
                 .fillColor("white")
                 .fontSize(14)
                 .font("Helvetica-Bold")
-                .text(`SECTION: ${section.section_name}`, rectX + 80, rectY - 17)
+                .text(`SECTION: ${section.section_name}`, rectX, rectY - 17, {
+                  width: doc.page.width - 90,
+                  align: "center"
+                })
                 .rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
                 .fill('#f7b344')
                 .fillColor("white")
                 .fontSize(14)
                 .font("Helvetica-Bold")
-                .text(`${section.section_comments}`, rectX + 65, rectY - 17);
+                .text(`SECTION OVERVIEW PHOTO`, rectX + 65, rectY - 17)
+                .text(`${section.section_comments ? 'COMMENTS' : ''}`, rectX + 340, rectY - 17);
               if (section.section_photo) {
                 doc.image(`data:image/jpg;base64,${section.section_photo}`, rectX, (rectY += 182) - 180, { width: 300, height: 180 });
               }
+              if (section.section_photo) {
+                let arlPhtY = section.section_photo ? rectY - 90 : (rectY += 45) - 25;
+                doc.fontSize(10)
+                  .fillColor("black")
+                  .text(`${section.section_comments ? section.section_comments : ''}`, doc.page.width / 2 + 45, arlPhtY, {
+                    width: doc.page.width / 2 - 90,
+                    align: "center"
+                  });
+              }
+
               if (section.defects) {
                 if (addPage(doc, page += 1, 570)) {
                   rectY = doc.y;
@@ -1501,8 +1652,14 @@ sap.ui.define([
                   .fillColor("white")
                   .fontSize(14)
                   .font("Helvetica-Bold")
-                  .text(`DEFECT SUMMARY FOR SECTION:`, rectX + 120, rectY - 42)
-                  .text(`${section.defects.reduce((agg, item) => { return agg + (agg ? "/" : "") + (item.activity || "") }, '')}`, rectX + 140, rectY - 20);
+                  .text(`DEFECT SUMMARY FOR SECTION:`, rectX, rectY - 42, {
+                    width: doc.page.width - 90,
+                    align: "center"
+                  })
+                  .text(`${section.defects.section_name || ''}`, rectX, rectY - 20, {
+                    width: doc.page.width - 90,
+                    align: "center"
+                  });
               }
               (section.defects || []).forEach(defect => {
                 if (addPage(doc, page += 1, 270)) {
@@ -1510,17 +1667,20 @@ sap.ui.define([
                 } else {
                   page -= 1;
                 }
-                doc.rect(rectX, (rectY += 50) - 50, doc.page.width - 90, 50)
+                doc.rect(rectX, (rectY += 50) - 50, doc.page.width - 90, 55)
                   .fill('#f7b344')
                   .fillColor("white")
                   .fontSize(14)
                   .font("Helvetica-Bold")
-                  .text(`${defect.activity} / ${defect.selection}`, rectX + 70, rectY - 42);
+                  .text(`Defect - ${defect.activity || ''} ${defect.selection || ''}`, rectX, rectY - 42, {
+                    width: doc.page.width - 90,
+                    align: "center"
+                  });
                 var tempY = doc.y < rectY - 20 ? rectY - 20 : doc.y;
                 doc.text(`DEFECT PHOTO`, rectX + 65, tempY)
                   .text(`REPAIR PHOTO`, doc.page.width - 220, tempY);
                 if (defect.defect_photo) {
-                  doc.image(`data:image/jpg;base64,${defect.defect_photo}`, rectX, (rectY += 182) - 180, { width: 240, height: 180 });
+                  doc.image(`data:image/jpg;base64,${defect.defect_photo}`, rectX, (rectY += 187) - 180, { width: 240, height: 180 });
                 }
                 if (defect.repair_photo) {
                   doc.image(`data:image/jpg;base64,${defect.repair_photo}`, doc.page.width - 285, rectY - 180, { width: 240, height: 180 });
@@ -1528,11 +1688,11 @@ sap.ui.define([
                 doc.fillColor('black')
                   .fontSize(9)
                   .font("Helvetica-Bold")
-                  .text("Comments", rectX + 2, rectY += 5, {
+                  .text(`${defect.comments ? 'COMMENTS' : ''}`, rectX + 2, rectY += 5, {
                     underline: true
                   })
                   .font("Helvetica")
-                  .text(`${defect.comments}`, rectX + 7, doc.y + 4);
+                  .text(`${defect.comments || ''}`, rectX + 7, doc.y + 4);
                 rectY = doc.y + 2;
               });
               if (section.recommended_work) {
@@ -1547,7 +1707,7 @@ sap.ui.define([
                   .fontSize(14)
                   .font("Helvetica-Bold")
                   .text(`RECOMMENDED WORK FOR SECTION:`, rectX + 120, rectY - 42)
-                  .text(`${section.recommended_work.reduce((agg, item) => { return agg + (agg ? "/" : "") + (item.selection || "") }, '')}`, rectX + 140, rectY - 20);
+                  .text(`${section.recommended_work.section_name || ''}`, rectX + 140, rectY - 20);
               }
               (section.recommended_work || []).forEach(recommended_work => {
                 if (addPage(doc, page += 1, 270)) {
@@ -1583,7 +1743,10 @@ sap.ui.define([
               .fillColor("white")
               .fontSize(14)
               .font("Helvetica-Bold")
-              .text(`LABOR AND MATERIALS FOR: ${jsonData.project_details.notification_number}`, rectX + 80, rectY - 17);
+              .text(`LABOR AND MATERIALS FOR: ${jsonData.project_details.notification_number}`, rectX, rectY - 17, {
+                width: doc.page.width - 90,
+                align: "center"
+              });
             doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
               .fill('#f7b344')
               .fillColor("white")
@@ -1602,6 +1765,13 @@ sap.ui.define([
               total: "Total"
             }].concat(jsonData.labor_materials_summary.materials) : [];
             (jsonData.labor_materials_summary.materials || []).forEach((material, dIndex) => {
+              if (addPage(doc, page += 1, 100)) {
+                rectY = doc.y;
+                maxY = doc.y;
+                rectX = doc.x;
+              } else {
+                page -= 1;
+              }
               doc.lineWidth(1)
                 .moveTo(rectX, doc.y)
                 .lineTo(doc.page.width - 45, doc.y)
@@ -1639,11 +1809,11 @@ sap.ui.define([
                 .moveTo(rectX + doc.page.width - 90, rectY - 12)
                 .lineTo(rectX + doc.page.width - 90, doc.y)
                 .stroke();
+              doc.lineWidth(1)
+                .moveTo(rectX, doc.y)
+                .lineTo(doc.page.width - 45, doc.y)
+                .stroke();
             });
-            doc.lineWidth(1)
-              .moveTo(rectX, doc.y)
-              .lineTo(doc.page.width - 45, doc.y)
-              .stroke();
             rectY = doc.y;
             doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
               .fill('#f7b344')
@@ -1664,6 +1834,13 @@ sap.ui.define([
               total: "Total"
             }].concat(jsonData.labor_materials_summary.labor_and_fees) : [];
             (jsonData.labor_materials_summary.labor_and_fees || []).forEach((labor_and_fees, dIndex) => {
+              if (addPage(doc, page += 1, 100)) {
+                rectY = doc.y;
+                maxY = doc.y;
+                rectX = doc.x;
+              } else {
+                page -= 1;
+              }
               doc.lineWidth(1)
                 .moveTo(rectX, doc.y)
                 .lineTo(doc.page.width - 45, doc.y)
@@ -1701,11 +1878,12 @@ sap.ui.define([
                 .moveTo(rectX + doc.page.width - 90, rectY - 12)
                 .lineTo(rectX + doc.page.width - 90, doc.y)
                 .stroke();
+              doc.lineWidth(1)
+                .moveTo(rectX, doc.y)
+                .lineTo(rectX + doc.page.width - 90, doc.y)
+                .stroke();
             });
-            doc.lineWidth(1)
-              .moveTo(rectX, doc.y)
-              .lineTo(rectX + doc.page.width - 90, doc.y)
-              .stroke();
+
             rectY = doc.y;
             doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
               .fill('#f7b344')
@@ -1730,6 +1908,10 @@ sap.ui.define([
               .font('Helvetica')
               .fontSize(10);
             let maxY = doc.y;
+            doc.lineWidth(1)
+              .moveTo(rectX, doc.y)
+              .lineTo(doc.page.width - 45, doc.y)
+              .stroke();
             jsonData.status_log = jsonData.status_log ? [{
               foreman_name: "Foreman Name",
               date: "Date",
@@ -1738,12 +1920,19 @@ sap.ui.define([
               elapsed_time: "Elapsed Time (Hrs)"
             }].concat(jsonData.status_log) : [];
             (jsonData.status_log || []).forEach((status_log, dIndex) => {
-              doc.lineWidth(1)
-                .moveTo(rectX, doc.y)
-                .lineTo(doc.page.width - 45, doc.y)
-                .stroke();
+              if (addPage(doc, page += 1, 75)) {
+                rectY = doc.y;
+                maxY = doc.y;
+                rectX = doc.x;
+                doc.lineWidth(1)
+                  .moveTo(rectX, doc.y)
+                  .lineTo(doc.page.width - 45, doc.y)
+                  .stroke();
+              } else {
+                page -= 1;
+              }
               rectY = doc.y + 12;
-              doc.text(`${status_log.foreman_name}`, rectX + 5, rectY, {
+              doc.text(`${status_log.foreman_name || ''}`, rectX + 5, rectY, {
                 width: 90,
                 align: 'left'
               });
@@ -1782,11 +1971,11 @@ sap.ui.define([
                 .moveTo(rectX + doc.page.width - 90, rectY - 12)
                 .lineTo(rectX + doc.page.width - 90, doc.y)
                 .stroke();
+              doc.lineWidth(1)
+                .moveTo(rectX, doc.y)
+                .lineTo(rectX + doc.page.width - 90, doc.y)
+                .stroke();
             });
-            doc.lineWidth(1)
-              .moveTo(rectX, doc.y)
-              .lineTo(rectX + doc.page.width - 90, doc.y)
-              .stroke();
             rectY = doc.y;
           }
         }
@@ -1794,21 +1983,23 @@ sap.ui.define([
           if ((!checkSpace) || (doc.page.maxY() <= doc.y + checkSpace)) {
             doc.addPage({ size: paperSize, margins: { top: 45, bottom: 1, left: 45, right: 45 } });
             doc.lineWidth(1)
-              .moveTo(40, doc.page.height - 20)
-              .lineTo(doc.page.width - 45, doc.page.height - 20)
+              .moveTo(40, doc.page.height - 28)
+              .lineTo(doc.page.width - 45, doc.page.height - 28)
               .stroke()
               .fillColor("#00529C")
+              .font('Helvetica')
               .fontSize(10)
-              .text("MyCentiMark.com", 45, doc.page.height - 16, {
+              .text("MyCentiMark.com", 45, doc.page.height - 24, {
                 link: `http://www.mycentimark.com/`,
                 underline: false
               })
-              .text(reportName, 190, doc.page.height - 16, {
+              .text(reportName, 190, doc.page.height - 24, {
                 underline: false
               });
             if (page) {
-              doc.text(`Page ${page}`, doc.page.width - 100, doc.page.height - 16);
+              doc.text(`Page ${page}`, doc.page.width - 100, doc.page.height - 24);
             }
+            doc.fillColor('black');
             doc.x = 45;
             doc.y = 45;
             return true;
