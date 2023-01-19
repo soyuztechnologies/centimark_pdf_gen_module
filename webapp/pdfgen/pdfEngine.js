@@ -1583,7 +1583,7 @@ sap.ui.define([
               .fontSize(14)
               .font("Helvetica-Bold")
               .text(`BUILDING PHOTO`, rectX + 65, rectY - 17)
-              .text('COMMENTS', rectX + 350, rectY - 17);
+              .text('COMMENTS', rectX + 365, rectY - 17);
             if (building.building_photo) {
               doc.image(`data:image/jpg;base64,${building.building_photo}`, rectX, (rectY += 182) - 180, { width: 300, height: 180 });
             }
@@ -1591,6 +1591,7 @@ sap.ui.define([
               let arlPhtY = building.building_photo ? rectY - 110 : (rectY += 45) - 25;
               doc.fillColor("black")
                 .fontSize(10)
+                .font("Helvetica")
                 .text(`${building.building_comments ? building.building_comments : ''}`, doc.page.width / 2 + 45, arlPhtY, {
                   width: doc.page.width / 2 - 90,
                   align: "center"
@@ -1627,7 +1628,7 @@ sap.ui.define([
                 .fontSize(14)
                 .font("Helvetica-Bold")
                 .text(`SECTION OVERVIEW PHOTO`, rectX + 65, rectY - 17)
-                .text(`${section.section_comments ? 'COMMENTS' : ''}`, rectX + 340, rectY - 17);
+                .text(`${'COMMENTS'}`, rectX + 365, rectY - 17);
               if (section.section_photo) {
                 doc.image(`data:image/jpg;base64,${section.section_photo}`, rectX, (rectY += 182) - 180, { width: 300, height: 180 });
               }
@@ -1635,6 +1636,7 @@ sap.ui.define([
                 let arlPhtY = section.section_photo ? rectY - 90 : (rectY += 45) - 25;
                 doc.fontSize(10)
                   .fillColor("black")
+                  .font("Helvetica")
                   .text(`${section.section_comments ? section.section_comments : ''}`, doc.page.width / 2 + 45, arlPhtY, {
                     width: doc.page.width / 2 - 90,
                     align: "center"
