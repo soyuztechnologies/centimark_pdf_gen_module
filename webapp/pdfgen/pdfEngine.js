@@ -1658,7 +1658,7 @@ sap.ui.define([
                     width: doc.page.width - 90,
                     align: "center"
                   })
-                  .text(`${section.defects.section_name || ''}`, rectX, rectY - 20, {
+                  .text(`${section.section_name || ''}`, rectX, rectY - 20, {
                     width: doc.page.width - 90,
                     align: "center"
                   });
@@ -1682,10 +1682,10 @@ sap.ui.define([
                 doc.text(`DEFECT PHOTO`, rectX + 65, tempY)
                   .text(`REPAIR PHOTO`, doc.page.width - 220, tempY);
                 if (defect.defect_photo) {
-                  doc.image(`data:image/jpg;base64,${defect.defect_photo}`, rectX, (rectY += 187) - 180, { width: 240, height: 180 });
+                  doc.image(`data:image/jpg;base64,${defect.defect_photo}`, rectX, (rectY += 187) - 180, { width: 250, height: 180 });
                 }
                 if (defect.repair_photo) {
-                  doc.image(`data:image/jpg;base64,${defect.repair_photo}`, doc.page.width - 285, rectY - 180, { width: 240, height: 180 });
+                  doc.image(`data:image/jpg;base64,${defect.repair_photo}`, doc.page.width - 295, rectY - 180, { width: 250, height: 180 });
                 }
                 doc.fillColor('black')
                   .fontSize(9)
@@ -1708,8 +1708,14 @@ sap.ui.define([
                   .fillColor("white")
                   .fontSize(14)
                   .font("Helvetica-Bold")
-                  .text(`RECOMMENDED WORK FOR SECTION:`, rectX + 120, rectY - 42)
-                  .text(`${section.recommended_work.section_name || ''}`, rectX + 140, rectY - 20);
+                  .text(`RECOMMENDED WORK FOR SECTION:`, rectX, rectY - 42, {
+                    width: doc.page.width - 90,
+                    align: "center"
+                  })
+                  .text(`${section.section_name || ''}`, rectX, rectY - 20, {
+                    width: doc.page.width - 90,
+                    align: "center"
+                  });
               }
               (section.recommended_work || []).forEach(recommended_work => {
                 if (addPage(doc, page += 1, 270)) {
@@ -1721,15 +1727,22 @@ sap.ui.define([
                   .fill('#f7b344')
                   .fillColor("white")
                   .fontSize(14)
-                  .text(`RECOMMENDED WORK PHOTO`, rectX + 65, rectY - 17)
+                  .text(`RECOMMENDED WORK PHOTO`, rectX + 20, rectY - 17)
                   .text(`DESCRIPTION`, doc.page.width - 220, rectY - 17);
                 if (recommended_work.photo) {
-                  doc.image(`data:image/jpeg;base64,${recommended_work.photo}`, rectX, (rectY += 182) - 180, { width: 240, height: 180 });
+                  doc.image(`data:image/jpeg;base64,${recommended_work.photo}`, rectX, (rectY += 182) - 180, { width: 250, height: 180 });
                 }
                 if (recommended_work.comments) {
                   doc.fillColor("black")
-                    .text(`${recommended_work.selection}`, doc.page.width - 285, rectY - 160, { width: 240, height: 180 })
-                    .text(`${recommended_work.comments}`, doc.page.width - 285, doc.y + 4, { width: 240, height: 180 });
+                    .fontSize(10)
+                    .font("Helvetica-Bold")
+                    .text(`${recommended_work.selection}`, doc.page.width - 288, rectY - 150, { width: 240 })
+                    .font("Helvetica")
+                    .text(`${recommended_work.description}`, doc.page.width - 285, doc.y , { width: 240 })
+                    .font("Helvetica-Bold")
+                    .text(`${recommended_work.selection ? 'COMMENTS' : ''}`, doc.page.width - 288, doc.y + 4, { width: 240 })
+                    .font("Helvetica")
+                    .text(`${recommended_work.comments}`, doc.page.width - 285, doc.y, { width: 240});
                 }
 
               });
