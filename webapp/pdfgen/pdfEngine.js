@@ -148,6 +148,7 @@ sap.ui.define([
             });
           } else {
             doc.x = xPointCol1;
+            doc.y = yPointCol1;
             doc.font("Helvetica")
               .fontSize(12)
               .text(`\n\n${jsonData.project_details.site_contact_before.bypass_reason_text || ""}`);
@@ -159,6 +160,7 @@ sap.ui.define([
             });
           } else {
             doc.x = xPointH + 260;
+            doc.y = yPointCol1;
             doc.font("Helvetica")
               .fontSize(12)
               .text(`\n\n${jsonData.project_details.site_contact_after.bypass_reason_text || ""}`);
@@ -1418,6 +1420,7 @@ sap.ui.define([
             });
           } else {
             doc.x = xPointCol1;
+            doc.y = yPointCol1;
             doc.font("Helvetica")
               .fontSize(12)
               .text(`\n\n${jsonData.project_details.site_contact_before.bypass_reason_text || ""}`);
@@ -1428,7 +1431,8 @@ sap.ui.define([
               width: 160
             });
           } else {
-            doc.x = xPointH + 260
+            doc.x = xPointH + 260;
+            doc.y = yPointCol1;
             doc.font("Helvetica")
               .fontSize(12)
               .text(`\n\n${jsonData.project_details.site_contact_after.bypass_reason_text || ""}`);
