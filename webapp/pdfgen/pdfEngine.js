@@ -161,7 +161,7 @@ sap.ui.define([
             doc.x = xPointH + 260;
             doc.font("Helvetica")
               .fontSize(12)
-              .text(`\n\n${jsonData.project_details.site_contact_before.bypass_reason_text || ""}`);
+              .text(`\n\n${jsonData.project_details.site_contact_after.bypass_reason_text || ""}`);
           }
           doc.lineWidth(2)
             .moveTo(xPointH, yPointH += 195)
@@ -1431,7 +1431,7 @@ sap.ui.define([
             doc.x = xPointH + 260
             doc.font("Helvetica")
               .fontSize(12)
-              .text(`\n\n${jsonData.project_details.site_contact_before.bypass_reason_text || ""}`);
+              .text(`\n\n${jsonData.project_details.site_contact_after.bypass_reason_text || ""}`);
           }
           doc.lineWidth(2)
             .moveTo(xPointH, yPointH += 195)
