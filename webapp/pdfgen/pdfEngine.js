@@ -5,7 +5,19 @@ sap.ui.define([
   "sap/ui/core/mvc/Controller"
 ], function (jQuery, MessageBox, Controller) {
   "use strict";
-
+  const currencyOptions = { 
+    style: 'currency', 
+    useGrouping: true, 
+    minimumFractionDigits: 2, 
+    maximumFractionDigits: 2,
+    currency: 'USD' 
+  };
+  const decimalOptions = { 
+    style: 'decimal', 
+    useGrouping: true, 
+    minimumFractionDigits: 2, 
+    maximumFractionDigits: 2
+  };
   return {
     pdfPM: function (jsonData, bType = 'download', paperSize = 'LETTER') {
       var that = this;
@@ -1161,32 +1173,48 @@ sap.ui.define([
               elapsed_time: "Elapsed Time (Hrs)"
             }].concat(jsonData.status_log) : [];
             (jsonData.status_log || []).forEach((status_log, dIndex) => {
+              if (addPage(doc, page += 1, 75)) {
+                rectY = doc.y;
+                maxY = doc.y;
+                rectX = doc.x;
+                doc.lineWidth(1)
+                  .moveTo(rectX, doc.y)
+                  .lineTo(doc.page.width - 45, doc.y)
+                  .stroke();
+              } else {
+                page -= 1;
+              }
+              if(dIndex===0){
+                doc.font("Helvetica-Bold");
+              }else{
+                doc.font("Helvetica");
+              }
               doc.lineWidth(1)
                 .moveTo(rectX, doc.y)
                 .lineTo(doc.page.width - 45, doc.y)
                 .stroke();
               rectY = doc.y + 12;
-              doc.text(`${status_log.foreman_name}`, rectX + 5, rectY, {
+              doc.text(`${status_log.foreman_name||''}`, rectX + 5, rectY, {
                 width: 90,
                 align: 'left'
               });
               maxY = maxY < doc.y ? doc.y : maxY;
-              doc.text(`${status_log.date}`, rectX + 110, rectY, {
+              doc.text(`${status_log.date||''}`, rectX + 110, rectY, {
                 width: 80,
                 align: 'center'
               });
               maxY = maxY < doc.y ? doc.y : maxY;
-              doc.text(`${status_log.time}`, rectX + 205, rectY, {
+              doc.text(`${status_log.time||''}`, rectX + 205, rectY, {
                 width: 80,
                 align: 'right'
               });
               maxY = maxY < doc.y ? doc.y : maxY;
-              doc.text(`${status_log.status}`, rectX + 305, rectY, {
+              doc.text(`${status_log.status||''}`, rectX + 305, rectY, {
                 width: 100,
                 align: 'left'
               });
               maxY = maxY < doc.y ? doc.y : maxY;
-              doc.text(`${status_log.elapsed_time}`, rectX + 400, rectY, {
+              doc.text(`${status_log.elapsed_time||''}`, rectX + 400, rectY, {
                 width: 100,
                 align: 'right'
               });
@@ -1778,7 +1806,7 @@ sap.ui.define([
               .fontSize(14)
               .font("Helvetica-Bold")
               .text(`Material`, rectX + 100, rectY - 17)
-              .text(`Total: $${jsonData.labor_materials_summary.material_total || '0'}`, rectX + 300, rectY - 17)
+              .text(`Total: ${parseFloat(jsonData.labor_materials_summary.material_total || '0').toLocaleString('en-US', currencyOptions)}`, rectX + 300, rectY - 17)
               .fillColor("black")
               .font('Helvetica')
               .fontSize(10);
@@ -1786,7 +1814,7 @@ sap.ui.define([
             jsonData.labor_materials_summary.materials = jsonData.labor_materials_summary.materials ? [{
               material_description: "Description",
               qty: "Quantity",
-              unit_price: 'Unite Price',
+              unit_price: 'Unit Price',
               total: "Total"
             }].concat(jsonData.labor_materials_summary.materials) : [];
             (jsonData.labor_materials_summary.materials || []).forEach((material, dIndex) => {
@@ -1796,6 +1824,11 @@ sap.ui.define([
                 rectX = doc.x;
               } else {
                 page -= 1;
+              }
+              if(dIndex===0){
+                doc.font("Helvetica-Bold");
+              }else{
+                doc.font('Helvetica');
               }
               doc.lineWidth(1)
                 .moveTo(rectX, doc.y)
@@ -1807,17 +1840,17 @@ sap.ui.define([
                 align: 'left'
               });
               maxY = maxY < doc.y ? doc.y : maxY;
-              doc.text(`${material.qty}`, rectX + 130, rectY, {
+              doc.text(`${isNaN(material.qty) ? material.qty : parseFloat(material.qty).toLocaleString('en-US', decimalOptions)}`, rectX + 130, rectY, {
                 width: 115,
                 align: 'right'
               });
               maxY = maxY < doc.y ? doc.y : maxY;
-              doc.text(`${isNaN(material.unit_price) ? material.unit_price : '$' + material.unit_price}`, rectX + 250, rectY, {
+              doc.text(`${isNaN(material.unit_price) ? material.unit_price : parseFloat(material.unit_price).toLocaleString('en-US', currencyOptions)}`, rectX + 250, rectY, {
                 width: 115,
                 align: 'right'
               });
               maxY = maxY < doc.y ? doc.y : maxY;
-              doc.text(`${isNaN(material.total) ? material.total : '$' + material.total}`, rectX + 370, rectY, {
+              doc.text(`${isNaN(material.total) ? material.total : parseFloat(material.total).toLocaleString('en-US', currencyOptions)}`, rectX + 370, rectY, {
                 width: 115,
                 align: 'right'
               });
@@ -1846,7 +1879,7 @@ sap.ui.define([
               .fontSize(14)
               .font("Helvetica-Bold")
               .text(`Labor and Fees`, rectX + 100, rectY - 17)
-              .text(`Total: $${jsonData.labor_materials_summary.labor_and_fees_total}`, rectX + 300, rectY - 17)
+              .text(`Total: ${parseFloat(jsonData.labor_materials_summary.labor_and_fees_total).toLocaleString('en-US', currencyOptions)}`, rectX + 300, rectY - 17)
               .fillColor("black")
               .font('Helvetica')
               .fontSize(10);
@@ -1866,6 +1899,11 @@ sap.ui.define([
               } else {
                 page -= 1;
               }
+              if(dIndex===0){
+                doc.font("Helvetica-Bold");
+              }else{
+                doc.font('Helvetica');
+              }
               doc.lineWidth(1)
                 .moveTo(rectX, doc.y)
                 .lineTo(doc.page.width - 45, doc.y)
@@ -1876,17 +1914,17 @@ sap.ui.define([
                 align: 'left'
               });
               maxY = maxY < doc.y ? doc.y : maxY;
-              doc.text(`${labor_and_fees.qty}`, rectX + 130, rectY, {
+              doc.text(`${isNaN(labor_and_fees.qty) ? labor_and_fees.qty : parseFloat(labor_and_fees.qty).toLocaleString('en-US', decimalOptions)}`, rectX + 130, rectY, {
                 width: 115,
                 align: 'right'
               });
               maxY = maxY < doc.y ? doc.y : maxY;
-              doc.text(`${isNaN(labor_and_fees.rate) ? labor_and_fees.rate : '$' + labor_and_fees.rate}`, rectX + 250, rectY, {
+              doc.text(`${isNaN(labor_and_fees.rate) ? labor_and_fees.rate : parseFloat(labor_and_fees.rate).toLocaleString('en-US', currencyOptions)}`, rectX + 250, rectY, {
                 width: 115,
                 align: 'right'
               });
               maxY = maxY < doc.y ? doc.y : maxY;
-              doc.text(`${isNaN(labor_and_fees.total) ? labor_and_fees.total : '$' + labor_and_fees.total}`, rectX + 370, rectY, {
+              doc.text(`${isNaN(labor_and_fees.total) ? labor_and_fees.total : parseFloat(labor_and_fees.total).toLocaleString('en-US', currencyOptions)}`, rectX + 370, rectY, {
                 width: 115,
                 align: 'right'
               });
@@ -1916,7 +1954,7 @@ sap.ui.define([
               .fontSize(14)
               .font("Helvetica-Bold")
               .text(`TOTAL`, rectX + 100, rectY - 17)
-              .text(`Total: $${jsonData.labor_materials_summary.grand_total}`, rectX + 300, rectY - 17);
+              .text(`Total: ${parseFloat(jsonData.labor_materials_summary.grand_total).toLocaleString('en-US', currencyOptions)}`, rectX + 300, rectY - 17);
           }
           if (jsonData.status_log) {
             // Status Section  
@@ -1956,28 +1994,33 @@ sap.ui.define([
               } else {
                 page -= 1;
               }
+              if(dIndex===0){
+                doc.font("Helvetica-Bold");
+              }else{
+                doc.font("Helvetica");
+              }
               rectY = doc.y + 12;
               doc.text(`${status_log.foreman_name || ''}`, rectX + 5, rectY, {
                 width: 90,
                 align: 'left'
               });
               maxY = maxY < doc.y ? doc.y : maxY;
-              doc.text(`${status_log.date}`, rectX + 110, rectY, {
+              doc.text(`${status_log.date || ''}`, rectX + 110, rectY, {
                 width: 80,
                 align: 'center'
               });
               maxY = maxY < doc.y ? doc.y : maxY;
-              doc.text(`${status_log.time}`, rectX + 205, rectY, {
+              doc.text(`${status_log.time || ''}`, rectX + 205, rectY, {
                 width: 80,
                 align: 'right'
               });
               maxY = maxY < doc.y ? doc.y : maxY;
-              doc.text(`${status_log.status}`, rectX + 305, rectY, {
+              doc.text(`${status_log.status || ''}`, rectX + 305, rectY, {
                 width: 100,
                 align: 'left'
               });
               maxY = maxY < doc.y ? doc.y : maxY;
-              doc.text(`${status_log.elapsed_time}`, rectX + 400, rectY, {
+              doc.text(`${status_log.elapsed_time || ''}`, rectX + 400, rectY, {
                 width: 100,
                 align: 'right'
               });
