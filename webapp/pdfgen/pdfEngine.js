@@ -1078,11 +1078,20 @@ sap.ui.define([
                       .text(`MAINTENANCE PHOTO`, rectX + 65, rectY - 17)
                       .text(`REPAIR PHOTO`, doc.page.width - 220, rectY - 17);
                     if (section_maint_act_defects.maintenance_photo) {
-                      doc.image(`data:image/jpeg;base64,${section_maint_act_defects.maintenance_photo}`, rectX, (rectY += 182) - 180, { width: 250, height: 180 });
+                      doc.image(`data:image/jpeg;base64,${section_maint_act_defects.maintenance_photo}`, rectX, (rectY += 187) - 185, { width: 250, height: 180 });
                     }
                     if (section_maint_act_defects.repair_photo) {
-                      doc.image(`data:image/jpeg;base64,${section_maint_act_defects.repair_photo}`, doc.page.width - 295, (rectY) - 180, { width: 250, height: 180 });
+                      doc.image(`data:image/jpeg;base64,${section_maint_act_defects.repair_photo}`, doc.page.width - 295, (rectY) - 185, { width: 250, height: 180 });
                     }
+
+                    // doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 360, 25)
+                    //   .fill('#f7b344')
+                    //   .fillColor("white")
+                    //   .fontSize(14)
+                    //   .text(`REPAIR OVERVIEW PHOTO`, rectX + 20, rectY - 17)
+                    // if (section_maint_act_defects.repair_overview_photo) {
+                    //   doc.image(`data:image/jpeg;base64,${section_maint_act_defects.repair_overview_photo}`, rectX, (rectY += 182) - 180, { width: 250, height: 180 });
+                    // }
                     doc.fillColor("black")
                       .fontSize(10)
                       .font("Helvetica-Bold")
@@ -1129,9 +1138,13 @@ sap.ui.define([
                       .font("Helvetica-Bold")
                       .text(`MAINTENANCE PHOTO`, rectX + 65, rectY - 17)
                       .text(`DESCRIPTION`, doc.page.width - 220, rectY - 17);
+                      // .text(`REPAIR OVERVIEW PHOTO`, doc.page.width - 270, rectY - 17);
                     if (section_maint_act_no_defects.maintenance_photo) {
                       doc.image(`data:image/jpeg;base64,${section_maint_act_no_defects.maintenance_photo}`, rectX, (rectY += 182) - 180, { width: 240, height: 180 });
                     }
+                    // if (section_maint_act_no_defects.repair_overview_photo) {
+                    //   doc.image(`data:image/jpeg;base64,${section_maint_act_no_defects.repair_overview_photo}`, doc.page.width - 295, (rectY) - 180, { width: 240, height: 180 });
+                    // }
                     doc.fillColor("black")
                       .fontSize(10)
                       .font("Helvetica-Bold")
@@ -1144,6 +1157,18 @@ sap.ui.define([
                       .text(`${section_maint_act_no_defects.comments || ""}`, doc.page.width - 275, doc.y + 4, { width: 230 });
                     rectY = doc.y > rectY ? doc.y + 2 : rectY + 2;
                     doc.x = rectX;
+                    // doc.fillColor("black")
+                    //   .fontSize(10)
+                    //   .font("Helvetica-Bold")
+                    //   .text(`${section_maint_act_no_defects.description || ""}`, rectX, rectY += 5, { width: doc.page.width - 90, underline: true })
+                    //   .font("Helvetica")
+                    //   .text(`${section_maint_act_no_defects.description_text || ""}`, rectX + 10, doc.y, { width: doc.page.width - 100 })
+                    //   .font("Helvetica-Bold")
+                    //   .text(`${section_maint_act_no_defects.comments ? "Comments" : ""}`, rectX, doc.y + 4, { width: doc.page.width - 90, underline: true })
+                    //   .font("Helvetica")
+                    //   .text(`${section_maint_act_no_defects.comments || ""}`, rectX + 10, doc.y + 4, { width: doc.page.width - 100 });
+                    // rectY = doc.y > rectY ? doc.y + 2 : rectY + 2;
+                    // doc.x = rectX;
                   });
                 }
               });
@@ -1707,7 +1732,7 @@ sap.ui.define([
                 } else {
                   page -= 1;
                 }
-                doc.rect(rectX, (rectY += 50) - 50, doc.page.width - 90, 55)
+                doc.rect(rectX, (rectY += 52) - 52, doc.page.width - 90, 55)
                   .fill('#f7b344')
                   .fillColor("white")
                   .fontSize(14)
@@ -1720,11 +1745,21 @@ sap.ui.define([
                 doc.text(`DEFECT PHOTO`, rectX + 65, tempY)
                   .text(`REPAIR PHOTO`, doc.page.width - 220, tempY);
                 if (defect.defect_photo) {
-                  doc.image(`data:image/jpg;base64,${defect.defect_photo}`, rectX, (rectY += 187) - 180, { width: 250, height: 180 });
+                  doc.image(`data:image/jpg;base64,${defect.defect_photo}`, rectX, (rectY += 190) - 185, { width: 250, height: 180 });
                 }
                 if (defect.repair_photo) {
-                  doc.image(`data:image/jpg;base64,${defect.repair_photo}`, doc.page.width - 295, rectY - 180, { width: 250, height: 180 });
+                  doc.image(`data:image/jpg;base64,${defect.repair_photo}`, doc.page.width - 295, rectY - 185, { width: 250, height: 180 });
                 }
+
+                doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 360, 25)
+                  .fill('#b57204')
+                  .fillColor("white")
+                  .fontSize(14)
+                  .text(`REPAIR OVERVIEW PHOTO`, rectX + 20, rectY - 17)
+                if (defect.repair_overview_photo) {
+                  doc.image(`data:image/jpeg;base64,${defect.repair_overview_photo}`, rectX, (rectY += 182) - 180, { width: 250, height: 180 });
+                }
+
                 doc.fillColor('black')
                   .fontSize(9)
                   .font("Helvetica-Bold")
