@@ -1983,23 +1983,23 @@ sap.ui.define([
             });
 
             rectY = doc.y;
-            // tax rate
-            doc.rect(rectX, (rectY += 25) - 20, doc.page.width - 90, 25)
-              .fill('#f7b344')
-              .fillColor("white")
-              .fontSize(14)
-              .font("Helvetica-Bold")
-              .text(`TAX RATE`, rectX + 100, rectY - 14)
-              .text(`${parseFloat(jsonData.labor_materials_summary.taxes.tax_rate).toLocaleString('en-US', currencyOptions)} %`, rectX + 310, rectY - 14);
+            // // tax rate
+            // doc.rect(rectX, (rectY += 25) - 20, doc.page.width - 90, 25)
+            //   .fill('#f7b344')
+            //   .fillColor("white")
+            //   .fontSize(14)
+            //   .font("Helvetica-Bold")
+            //   .text(`TAX RATE`, rectX + 100, rectY - 14)
+            //   .text(`${parseFloat(jsonData.labor_materials_summary.taxes.tax_rate).toLocaleString('en-US', currencyOptions)} %`, rectX + 310, rectY - 14);
 
-            // sub total
-            doc.rect(rectX, (rectY += 25) - 20, doc.page.width - 90, 25)
-              .fill('#f7b344')
-              .fillColor("white")
-              .fontSize(14)
-              .font("Helvetica-Bold")
-              .text(`TAX AMOUNT`, rectX + 100, rectY - 14)
-              .text(`${parseFloat(jsonData.labor_materials_summary.taxes.total).toLocaleString('en-US', currencyOptions)}`, rectX + 310, rectY - 14);
+            // // sub total
+            // doc.rect(rectX, (rectY += 25) - 20, doc.page.width - 90, 25)
+            //   .fill('#f7b344')
+            //   .fillColor("white")
+            //   .fontSize(14)
+            //   .font("Helvetica-Bold")
+            //   .text(`TAX AMOUNT`, rectX + 100, rectY - 14)
+            //   .text(`${parseFloat(jsonData.labor_materials_summary.taxes.total).toLocaleString('en-US', currencyOptions)}`, rectX + 310, rectY - 14);
 
             // grand total
             doc.rect(rectX, (rectY += 25) - 20, doc.page.width - 90, 25)
@@ -2008,8 +2008,8 @@ sap.ui.define([
               .fontSize(14)
               .font("Helvetica-Bold")
               .text(`GRAND TOTAL`, rectX + 100, rectY - 14)
-              // .text(`Total: ${parseFloat(jsonData.labor_materials_summary.grand_total).toLocaleString('en-US', currencyOptions)}`, rectX + 300, rectY - 17);
-              .text(parseFloat(jsonData.labor_materials_summary.grand_total).toLocaleString('en-US', currencyOptions), rectX + 310, rectY - 14);
+              .text(`Total: ${parseFloat(jsonData.labor_materials_summary.grand_total).toLocaleString('en-US', currencyOptions)}`, rectX + 300, rectY - 17);
+              // .text(parseFloat(jsonData.labor_materials_summary.grand_total).toLocaleString('en-US', currencyOptions), rectX + 310, rectY - 14);
           }
           if (jsonData.status_log) {
             // Status Section  
