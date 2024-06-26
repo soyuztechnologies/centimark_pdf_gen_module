@@ -1751,13 +1751,25 @@ sap.ui.define([
                   doc.image(`data:image/jpg;base64,${defect.repair_photo}`, doc.page.width - 295, rectY - 185, { width: 250, height: 180 });
                 }
 
-                doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 360, 25)
-                  .fill('#b57204')
-                  .fillColor("white")
-                  .fontSize(14)
-                  .text(`REPAIR OVERVIEW PHOTO`, rectX + 20, rectY - 17)
-                if (defect.repair_overview_photo) {
-                  doc.image(`data:image/jpeg;base64,${defect.repair_overview_photo}`, rectX, (rectY += 182) - 180, { width: 250, height: 180 });
+                if(defect.repair_overview_photo){
+
+                  if (addPage(doc, page += 1, 270)) {
+                    rectY = doc.y;
+                  } else {
+                    page -= 1;
+                  }
+
+                  // if repair photo is present show it on PDF.
+                  // change by - Sid ---- Date: 26/06/2024
+                  doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 360, 25)
+                    .fill('#b57204')
+                    .fillColor("white")
+                    .fontSize(14)
+                    .text(`REPAIR OVERVIEW PHOTO`, rectX + 20, rectY - 17)
+                  if (defect.repair_overview_photo) {
+                    doc.image(`data:image/jpeg;base64,${defect.repair_overview_photo}`, rectX, (rectY += 182) - 180, { width: 250, height: 180 });
+                  }
+
                 }
 
                 doc.fillColor('black')
@@ -1983,23 +1995,23 @@ sap.ui.define([
             });
 
             rectY = doc.y;
-            // // tax rate
-            // doc.rect(rectX, (rectY += 25) - 20, doc.page.width - 90, 25)
-            //   .fill('#f7b344')
-            //   .fillColor("white")
-            //   .fontSize(14)
-            //   .font("Helvetica-Bold")
-            //   .text(`TAX RATE`, rectX + 100, rectY - 14)
-            //   .text(`${parseFloat(jsonData.labor_materials_summary.taxes.tax_rate).toLocaleString('en-US', currencyOptions)} %`, rectX + 310, rectY - 14);
+            // tax rate
+            doc.rect(rectX, (rectY += 25) - 20, doc.page.width - 90, 25)
+              .fill('#f7b344')
+              .fillColor("white")
+              .fontSize(14)
+              .font("Helvetica-Bold")
+              .text(`TAX RATE`, rectX + 100, rectY - 14)
+              .text(`${parseFloat(jsonData.labor_materials_summary?.taxes?.tax_rate ? jsonData.labor_materials_summary.taxes.tax_rate: "0.00" ).toLocaleString('en-US', currencyOptions)} %`, rectX + 310, rectY - 14);
 
-            // // sub total
-            // doc.rect(rectX, (rectY += 25) - 20, doc.page.width - 90, 25)
-            //   .fill('#f7b344')
-            //   .fillColor("white")
-            //   .fontSize(14)
-            //   .font("Helvetica-Bold")
-            //   .text(`TAX AMOUNT`, rectX + 100, rectY - 14)
-            //   .text(`${parseFloat(jsonData.labor_materials_summary.taxes.total).toLocaleString('en-US', currencyOptions)}`, rectX + 310, rectY - 14);
+            // sub total
+            doc.rect(rectX, (rectY += 25) - 20, doc.page.width - 90, 25)
+              .fill('#f7b344')
+              .fillColor("white")
+              .fontSize(14)
+              .font("Helvetica-Bold")
+              .text(`TAX AMOUNT`, rectX + 100, rectY - 14)
+              .text(`${parseFloat(jsonData.labor_materials_summary?.taxes?.total ? jsonData.labor_materials_summary.taxes.total: "0.00" ).toLocaleString('en-US', currencyOptions)}`, rectX + 310, rectY - 14);
 
             // grand total
             doc.rect(rectX, (rectY += 25) - 20, doc.page.width - 90, 25)
@@ -2008,8 +2020,8 @@ sap.ui.define([
               .fontSize(14)
               .font("Helvetica-Bold")
               .text(`GRAND TOTAL`, rectX + 100, rectY - 14)
-              .text(`Total: ${parseFloat(jsonData.labor_materials_summary.grand_total).toLocaleString('en-US', currencyOptions)}`, rectX + 300, rectY - 17);
-              // .text(parseFloat(jsonData.labor_materials_summary.grand_total).toLocaleString('en-US', currencyOptions), rectX + 310, rectY - 14);
+              // .text(`Total: ${parseFloat(jsonData.labor_materials_summary.grand_total).toLocaleString('en-US', currencyOptions)}`, rectX + 300, rectY - 17);
+              .text(parseFloat(jsonData.labor_materials_summary.grand_total).toLocaleString('en-US', currencyOptions), rectX + 310, rectY - 14);
           }
           if (jsonData.status_log) {
             // Status Section  
