@@ -2002,7 +2002,7 @@ sap.ui.define([
               .fontSize(14)
               .font("Helvetica-Bold")
               .text(`TAX RATE`, rectX + 100, rectY - 14)
-              .text(`${parseFloat(jsonData.labor_materials_summary?.taxes ? jsonData.labor_materials_summary?.taxes?.tax_rate ? jsonData.labor_materials_summary.taxes.tax_rate: "0.00" : "0.00").toLocaleString('en-US', currencyOptions)} %`, rectX + 310, rectY - 14);
+              .text(`${parseFloat(jsonData.labor_materials_summary.taxes ? jsonData.labor_materials_summary.taxes.tax_rate ? jsonData.labor_materials_summary.taxes.tax_rate: "0.00" : "0.00").toLocaleString('en-US', currencyOptions)} %`, rectX + 310, rectY - 14);
 
             // sub total
             doc.rect(rectX, (rectY += 25) - 20, doc.page.width - 90, 25)
@@ -2011,7 +2011,7 @@ sap.ui.define([
               .fontSize(14)
               .font("Helvetica-Bold")
               .text(`TAX AMOUNT`, rectX + 100, rectY - 14)
-              .text(`${parseFloat(jsonData.labor_materials_summary?.taxes ? jsonData.labor_materials_summary?.taxes?.total ? jsonData.labor_materials_summary.taxes.total: "0.00" : "0.00" ).toLocaleString('en-US', currencyOptions)}`, rectX + 310, rectY - 14);
+              .text(`${parseFloat(jsonData.labor_materials_summary.taxes ? jsonData.labor_materials_summary.taxes.total ? jsonData.labor_materials_summary.taxes.total: "0.00" : "0.00" ).toLocaleString('en-US', currencyOptions)}`, rectX + 310, rectY - 14);
 
             // grand total
             doc.rect(rectX, (rectY += 25) - 20, doc.page.width - 90, 25)
