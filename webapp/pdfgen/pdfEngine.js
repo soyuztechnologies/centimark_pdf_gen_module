@@ -1752,8 +1752,9 @@ sap.ui.define([
                 }
 
                 if(defect.repair_overview_photo){
-
-                  if (addPage(doc, page += 1, 270)) {
+                  // debugger;
+                  if (addPage(doc, page += 1, 450)) {
+                    // 
                     rectY = doc.y;
                   } else {
                     page -= 1;
@@ -1926,7 +1927,7 @@ sap.ui.define([
               .fontSize(14)
               .font("Helvetica-Bold")
               .text(`Labor and Fees`, rectX + 100, rectY - 17)
-              .text(`Total: ${parseFloat(jsonData.labor_materials_summary.labor_and_fees_total).toLocaleString('en-US', currencyOptions)}`, rectX + 300, rectY - 17)
+              .text(`Total: ${parseFloat(jsonData.labor_materials_summary.labor_and_fees_total ? jsonData.labor_materials_summary.labor_and_fees_total : "0.00").toLocaleString('en-US', currencyOptions)}`, rectX + 300, rectY - 17)
               .fillColor("black")
               .font('Helvetica')
               .fontSize(10);
@@ -2116,6 +2117,7 @@ sap.ui.define([
           }
         }
         let addPage = (doc, page = null, checkSpace = null) => {
+          // "checkspace" will check if there is enough space left on the page.
           if ((!checkSpace) || (doc.page.maxY() <= doc.y + checkSpace)) {
             doc.addPage({ size: paperSize, margins: { top: 45, bottom: 1, left: 45, right: 45 } });
             doc.lineWidth(1)
