@@ -9,10 +9,9 @@
     "sapui5"
   ],
   "main": "webapp/index.html",
-  "dependencies": {},
   "devDependencies": {
-    "@ui5/cli": "^2.14.1",
-    "@sap/ux-ui5-tooling": "1"
+    "@sap/ux-ui5-tooling": "^1.16.3",
+    "@ui5/cli": "^3.11.3"
   },
   "scripts": {
     "start-flp": "fiori run --open \"test/flpSandbox.html?sap-ui-xx-viewCache=false#centipdfgeneratorpdfgenerator-display\"",

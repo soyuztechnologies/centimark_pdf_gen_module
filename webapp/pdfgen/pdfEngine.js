@@ -1275,8 +1275,8 @@ sap.ui.define([
               .stroke()
               .fillColor("#00529C")
               .fontSize(10)
-              .text("MyCentiMark.com", 45, doc.page.height - 24, {
-                link: `http://www.mycentimark.com/`,
+              .text("CentiMark.com", 45, doc.page.height - 24, {
+                link: `http://centimark.com/`,
                 underline: false
               })
               .text(reportName, 190, doc.page.height - 24, {
@@ -2127,8 +2127,8 @@ sap.ui.define([
               .fillColor("#00529C")
               .font('Helvetica')
               .fontSize(10)
-              .text("MyCentiMark.com", 45, doc.page.height - 24, {
-                link: `http://www.mycentimark.com/`,
+              .text("CentiMark.com", 45, doc.page.height - 24, {
+                link: `http://centimark.com/`,
                 underline: false
               })
               .text(reportName, 190, doc.page.height - 24, {
