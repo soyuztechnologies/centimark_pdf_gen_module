@@ -15,6 +15,167 @@ sap.ui.define([],
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     };
+
+    function niceDocument(logo, options = {}) {
+      const {
+        paperSize = 'A4',
+        reportName = 'Untitled Report',
+        reportNameX = 192,
+        downloadName = 'Report',
+        bType = 'window',
+        headerFn = () => { },
+        enableRoundedImage = false,
+        page = 1,
+        resolve
+      } = options;
+
+      // --- Initialize document ---
+      const doc = new PDFDocument({
+        size: paperSize,
+        margins: { top: 45, bottom: 1, left: 40, right: 40 }
+      });
+
+      // Optional helper for rounded images
+      if (enableRoundedImage) {
+        PDFDocument.prototype.roundedImage = function (imgSrc, x, y, width, height, radius) {
+          this.save();
+          this.roundedRect(x, y, width, height, radius).clip();
+          this.image(imgSrc, x, y, { width, height });
+          this.restore();
+          return this;
+        };
+      }
+
+      // --- Footer Section ---
+      doc.lineWidth(1)
+        .moveTo(40, doc.page.height - 28)
+        .lineTo(doc.page.width - 45, doc.page.height - 28)
+        .stroke()
+        .fillColor("#00529B")
+        .font('Helvetica')
+        .fontSize(10)
+        .text("CentiMark.com", 40, doc.page.height - 24, {
+          link: `http://centimark.com/`,
+          underline: false,
+          characterSpacing: -0.2,
+          wordSpacing: -0.4
+        })
+        .text(reportName, reportNameX, doc.page.height - 24, {
+          underline: false,
+          characterSpacing: -0.2,
+          wordSpacing: -0.4
+        });
+
+      if (page) {
+        doc.text(`Page ${page}`, doc.page.width - 75, doc.page.height - 24, {
+          characterSpacing: -0.2,
+          wordSpacing: -0.4
+        });
+      }
+
+      // --- Body setup ---
+      doc.fillColor("#121E28");
+      doc.x = 45;
+      doc.y = 45;
+
+      const stream = doc.pipe(blobStream());
+
+      // --- Header function call (custom) ---
+      if (typeof headerFn === "function") {
+        headerFn(doc, logo);
+      }
+
+      // --- Finalize PDF ---
+      doc.end();
+
+      // --- Stream handling ---
+      stream.on('finish', function () {
+        const blob = stream.toBlob('application/pdf');
+        const url = stream.toBlobURL('application/pdf');
+
+        if (bType === 'binary') {
+          const reader = new FileReader();
+          reader.readAsDataURL(blob);
+          reader.onloadend = function () {
+            const base64data = reader.result;
+            if (resolve) {
+              resolve(atob(base64data.split('base64,')[1]));
+            }
+          };
+        } else if (bType === 'blobURL') {
+          if (resolve) resolve(url);
+        } else {
+          // Default open in new tab
+          window.open(url, '_blank');
+          // Or download:
+          // const date = new Date();
+          // const downloadLink = document.createElement('a');
+          // downloadLink.href = url;
+          // downloadLink.download = `${downloadName}_${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}.pdf`;
+          // downloadLink.click();
+          // if (resolve) resolve("PDF Downloaded Successfully");
+        }
+      });
+    }
+
+    function addPageGeneric(doc, options = {}) {
+      const {
+        paperSize = 'A4',
+        margins = { top: 45, bottom: 1, left: 40, right: 40 },
+        reportName = '',
+        reportNameX = 200,
+        page = null,
+        checkSpace = null,
+        footerX = 40,
+        footerLineStart = 40,
+        footerLineEnd = 45,
+        pageXOffset = 85,
+        font = 'Helvetica',
+        includeSpacing = true
+      } = options;
+
+      // Check if a new page is required
+      if ((!checkSpace) || (doc.page.maxY() <= doc.y + checkSpace)) {
+
+        // Add a new page with consistent margins
+        doc.addPage({ size: paperSize, margins });
+
+        // Draw footer line
+        doc.lineWidth(1)
+          .moveTo(footerLineStart, doc.page.height - 28)
+          .lineTo(doc.page.width - footerLineEnd, doc.page.height - 28)
+          .stroke()
+          .fillColor("#00529B")
+          .font(font)
+          .fontSize(10);
+
+        // Footer text: CentiMark and Report name
+        const textOptions = includeSpacing
+          ? { underline: false, characterSpacing: -0.2, wordSpacing: -0.4 }
+          : { underline: false };
+
+        doc.text("CentiMark.com", footerX, doc.page.height - 24, {
+          ...textOptions,
+          link: "http://centimark.com/"
+        });
+
+        doc.text(reportName, reportNameX, doc.page.height - 24, textOptions);
+
+        // Page number text
+        if (page) {
+          doc.text(`Page ${page}`, doc.page.width - pageXOffset, doc.page.height - 24, textOptions);
+        }
+
+        // Reset text position for next content
+        doc.fillColor("#121E28");
+        doc.x = margins.left + 5;
+        doc.y = margins.top;
+        return true;
+      }
+
+      return false;
+    }
+
     return {
       pdfPM: function (jsonData, bType = 'download', paperSize = 'LETTER') {
         var that = this;
@@ -68,7 +229,7 @@ sap.ui.define([],
                 .fontSize(14)
                 .font("Helvetica-Bold")
                 .text(`BUILDING: ${building_section_summary.building_name || ''}`, rectX + 80, rectY - 17)
-                .fillColor("black")
+                .fillColor("#121E28")
                 .font('Helvetica')
                 .fontSize(10);
               doc.lineWidth(1)
@@ -104,12 +265,12 @@ sap.ui.define([],
                   page -= 1;
                 }
                 doc.rect(rectX, (rectY += 25) - 25, 440, 25)
-                  .fill('#C47C08')
+                  .fill('#F4A20B')
                   .fillColor("white")
                   .fontSize(14)
                   .font("Helvetica-Bold")
                   .text(`SECTION: ${section_summary.section_name || ''}`, rectX + 82, rectY - 17)
-                  .fillColor("black")
+                  .fillColor("#121E28")
                   .font('Helvetica')
                   .fontSize(10);
                 doc.lineWidth(1)
@@ -184,7 +345,7 @@ sap.ui.define([],
                 align: "center"
               })
                 .rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
-                .fill('#C47C08')
+                .fill('#F4A20B')
                 .fillColor("white")
                 .fontSize(14)
                 .font("Helvetica-Bold")
@@ -213,7 +374,7 @@ sap.ui.define([],
                   page -= 1;
                 }
                 doc.fontSize(14)
-                  .fillColor("black")
+                  .fillColor("#121E28")
                   .font("Helvetica-Bold")
                   .text("BUILDING SPECIFICATION MATRIX", {
                     width: doc.page.width - 90,
@@ -237,7 +398,7 @@ sap.ui.define([],
                   width: (doc.page.width - 45) / 2,
                   align: "center"
                 });
-                doc.fillColor("black")
+                doc.fillColor("#121E28")
                   .font('Helvetica')
                   .fontSize(10);
                 building_summary.specification_matrix.forEach(specification_matrix => {
@@ -283,7 +444,7 @@ sap.ui.define([],
                   page -= 1;
                 }
                 doc.fontSize(14)
-                  .fillColor("black")
+                  .fillColor("#121E28")
                   .font("Helvetica-Bold")
                   .text("BUILDING INSPECTION MATRIX", {
                     width: doc.page.width - 90,
@@ -316,7 +477,7 @@ sap.ui.define([],
                   width: (doc.page.width - 45) * 2 / 5,
                   align: "center"
                 });
-                doc.fillColor("black")
+                doc.fillColor("#121E28")
                   .font('Helvetica')
                   .fontSize(10);
                 building_summary.inspection_matrix.forEach(inspection_matrix => {
@@ -352,7 +513,7 @@ sap.ui.define([],
                       align: 'center'
                     })
                     .font("Helvetica")
-                    .fillColor("black");
+                    .fillColor("#121E28");
                   doc.lineWidth(1)
                     .moveTo(rectX, rectY - 12)
                     .lineTo(rectX, doc.y)
@@ -378,18 +539,18 @@ sap.ui.define([],
                   .moveTo(340, rectY)
                   .lineTo(370, rectY)
                   .fillAndStroke("#C4222F", "#C4222F")
-                  .fillColor("black")
+                  .fillColor("#121E28")
                   .fontSize(14)
                   .font("Helvetica-Bold")
                   .fillColor("white")
                   .text("+", 112, rectY - 5)
-                  .fillColor("black")
+                  .fillColor("#121E28")
                   .fontSize(12)
                   .text("    Inspection - No Defects", 120, rectY - 5)
                   .fillColor("white")
                   .fontSize(14)
                   .text("x", 352, rectY - 5)
-                  .fillColor("black")
+                  .fillColor("#121E28")
                   .fontSize(12)
                   .text("    Inspection - Repair Needed", 360, rectY - 5)
                   .font("Helvetica");
@@ -429,7 +590,7 @@ sap.ui.define([],
                     page -= 1;
                   }
                   doc.rect(rectX, (rectY += 27) - 25, doc.page.width - 90, 25)
-                    .fill('#C47C08')
+                    .fill('#F4A20B')
                     .fillColor("white")
                     .fontSize(14)
                     .font("Helvetica-Bold");
@@ -441,7 +602,7 @@ sap.ui.define([],
                     doc.image(`data:image/jpg;base64,${building_specifications.inspection_photo}`, rectX, rectY - 180, { width: 240, height: 180 });
                   }
                   if (building_specifications.description) {
-                    doc.fillColor("black")
+                    doc.fillColor("#121E28")
                       .fontSize(10)
                       .text(`${building_specifications.description || ""}`, doc.page.width - 285, rectY - 160, { width: 240, height: 180, underline: true });
                   }
@@ -471,7 +632,7 @@ sap.ui.define([],
                     align: "center"
                   })
                     .rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
-                    .fill('#C47C08')
+                    .fill('#F4A20B')
                     .fillColor("white")
                     .fontSize(14)
                     .font("Helvetica-Bold")
@@ -483,7 +644,7 @@ sap.ui.define([],
                   if (section_details.comments) {
                     doc.y = section_details.section_overview_photo ? rectY - 90 : (rectY += 45) - 25;
                     doc.x = rectX + 330;
-                    doc.fillColor('black')
+                    doc.fillColor("#121E28")
                       .fontSize(11)
                       .font("Helvetica")
                       .text(`${section_details.comments}`, {
@@ -502,7 +663,7 @@ sap.ui.define([],
                       page -= 1;
                     }
                     doc.fontSize(14)
-                      .fillColor("black")
+                      .fillColor("#121E28")
                       .font("Helvetica-Bold")
                       .text("SECTION SPECIFICATION MATRIX", {
                         width: doc.page.width - 90,
@@ -526,7 +687,7 @@ sap.ui.define([],
                       width: (doc.page.width - 45) / 2,
                       align: "center"
                     });
-                    doc.fillColor("black")
+                    doc.fillColor("#121E28")
                       .font('Helvetica')
                       .fontSize(10);
                     section_details.specification_matrix.forEach(specification_matrix => {
@@ -572,7 +733,7 @@ sap.ui.define([],
                       page -= 1;
                     }
                     doc.fontSize(14)
-                      .fillColor("black")
+                      .fillColor("#121E28")
                       .font("Helvetica-Bold")
                       .text("MAINTENANCE ACTIVITY MATRIX", {
                         width: doc.page.width - 90,
@@ -605,7 +766,7 @@ sap.ui.define([],
                       width: (doc.page.width - 45) * 2 / 5,
                       align: "center"
                     });
-                    doc.fillColor("black")
+                    doc.fillColor("#121E28")
                       .font('Helvetica')
                       .fontSize(10);
                     section_details.maintenance_activity_matrix.forEach(maintenance_activity_matrix => {
@@ -641,7 +802,7 @@ sap.ui.define([],
                           align: 'center'
                         })
                         .font("Helvetica")
-                        .fillColor("black");
+                        .fillColor("#121E28");
                       doc.lineWidth(1)
                         .moveTo(rectX, rectY - 12)
                         .lineTo(rectX, doc.y)
@@ -667,18 +828,18 @@ sap.ui.define([],
                       .moveTo(340, rectY)
                       .lineTo(370, rectY)
                       .fillAndStroke("#C4222F", "#C4222F")
-                      .fillColor("black")
+                      .fillColor("#121E28")
                       .fontSize(14)
                       .font("Helvetica-Bold")
                       .fillColor("white")
                       .text("+", 112, rectY - 5)
-                      .fillColor("black")
+                      .fillColor("#121E28")
                       .fontSize(12)
                       .text("    Maintenance - No Defects", 120, rectY - 5)
                       .fillColor("white")
                       .fontSize(14)
                       .text("x", 352, rectY - 5)
-                      .fillColor("black")
+                      .fillColor("#121E28")
                       .fontSize(12)
                       .text("    Maintenance - Repair Needed", 360, rectY - 5)
                       .font("Helvetica");
@@ -693,7 +854,7 @@ sap.ui.define([],
                       page -= 1;
                     }
                     doc.fontSize(14)
-                      .fillColor("black")
+                      .fillColor("#121E28")
                       .font("Helvetica-Bold")
                       .text("SECTION INSPECTION MATRIX", {
                         width: doc.page.width - 90,
@@ -726,7 +887,7 @@ sap.ui.define([],
                       width: (doc.page.width - 45) * 2 / 5,
                       align: "center"
                     });
-                    doc.fillColor("black")
+                    doc.fillColor("#121E28")
                       .font('Helvetica')
                       .fontSize(10);
                     section_details.inspection_matrix.forEach(inspection_matrix => {
@@ -762,7 +923,7 @@ sap.ui.define([],
                           align: 'center'
                         })
                         .font("Helvetica")
-                        .fillColor('black');
+                        .fillColor("#121E28");
                       doc.lineWidth(1)
                         .moveTo(rectX, rectY - 12)
                         .lineTo(rectX, doc.y)
@@ -788,18 +949,18 @@ sap.ui.define([],
                       .moveTo(340, rectY)
                       .lineTo(370, rectY)
                       .fillAndStroke("#C4222F", "#C4222F")
-                      .fillColor("black")
+                      .fillColor("#121E28")
                       .fontSize(14)
                       .font("Helvetica-Bold")
                       .fillColor("white")
                       .text("+", 112, rectY - 5)
-                      .fillColor("black")
+                      .fillColor("#121E28")
                       .fontSize(12)
                       .text("    Inspection - No Defects", 120, rectY - 5)
                       .fillColor("white")
                       .fontSize(14)
                       .text("x", 352, rectY - 5)
-                      .fillColor("black")
+                      .fillColor("#121E28")
                       .fontSize(12)
                       .text("    Inspection - Repair Needed", 360, rectY - 5)
                       .font("Helvetica");
@@ -831,7 +992,7 @@ sap.ui.define([],
                         page -= 1;
                       }
                       doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
-                        .fill('#C47C08')
+                        .fill('#F4A20B')
                         .fillColor("white")
                         .fontSize(14)
                         .font("Helvetica-Bold")
@@ -841,7 +1002,7 @@ sap.ui.define([],
                       if (section_inspections.inspection_photo) {
                         doc.image(`data:image/jpeg;base64,${section_inspections.inspection_photo}`, rectX, (rectY += 182) - 180, { width: 240, height: 180 });
                       }
-                      doc.fillColor("black")
+                      doc.fillColor("#121E28")
                         .fontSize(10)
                         .font("Helvetica-Bold")
                         .text(`${section_inspections.description || ""}`, doc.page.width - 285, section_inspections.inspection_photo ? rectY - 160 : rectY + 20, { width: 240, height: 180, underline: true })
@@ -880,7 +1041,7 @@ sap.ui.define([],
                   //       page -= 1;
                   //     }
                   //     doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
-                  //       .fill('#C47C08')
+                  //       .fill('#F4A20B')
                   //       .fillColor("white")
                   //       .fontSize(14)
                   //       .font("Helvetica-Bold")
@@ -889,7 +1050,7 @@ sap.ui.define([],
                   //     if (section_maintenance_activities.maintenance_photo) {
                   //       doc.image(`data:image/jpeg;base64,${section_maintenance_activities.maintenance_photo}`, rectX, (rectY += 182) - 180, { width: 240, height: 180 });
                   //     }
-                  //     doc.fillColor("black")
+                  //     doc.fillColor("#121E28")
                   //       .fontSize(10)
                   //       .font("Helvetica-Bold")
                   //       .text(`${section_maintenance_activities.description || ""}`, doc.page.width - 285, (section_maintenance_activities.maintenance_photo ? rectY - 160 : rectY + 20), { width: 240, underline: true })
@@ -929,7 +1090,7 @@ sap.ui.define([],
                         page -= 1;
                       }
                       doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
-                        .fill('#C47C08')
+                        .fill('#F4A20B')
                         .fillColor("white")
                         .fontSize(14)
                         .font("Helvetica-Bold")
@@ -943,14 +1104,14 @@ sap.ui.define([],
                       }
 
                       // doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 360, 25)
-                      //   .fill('#C47C08')
+                      //   .fill('#F4A20B')
                       //   .fillColor("white")
                       //   .fontSize(14)
                       //   .text(`REPAIR OVERVIEW PHOTO`, rectX + 20, rectY - 17)
                       // if (section_maint_act_defects.repair_overview_photo) {
                       //   doc.image(`data:image/jpeg;base64,${section_maint_act_defects.repair_overview_photo}`, rectX, (rectY += 182) - 180, { width: 250, height: 180 });
                       // }
-                      doc.fillColor("black")
+                      doc.fillColor("#121E28")
                         .fontSize(10)
                         .font("Helvetica-Bold")
                         .text(`${section_maint_act_defects.description || ""}`, rectX, rectY += 5, { width: doc.page.width - 90, underline: true })
@@ -990,7 +1151,7 @@ sap.ui.define([],
                         page -= 1;
                       }
                       doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
-                        .fill('#C47C08')
+                        .fill('#F4A20B')
                         .fillColor("white")
                         .fontSize(14)
                         .font("Helvetica-Bold")
@@ -1003,7 +1164,7 @@ sap.ui.define([],
                       // if (section_maint_act_no_defects.repair_overview_photo) {
                       //   doc.image(`data:image/jpeg;base64,${section_maint_act_no_defects.repair_overview_photo}`, doc.page.width - 295, (rectY) - 180, { width: 240, height: 180 });
                       // }
-                      doc.fillColor("black")
+                      doc.fillColor("#121E28")
                         .fontSize(10)
                         .font("Helvetica-Bold")
                         .text(`${section_maint_act_no_defects.description || ""}`, doc.page.width - 285, (section_maint_act_no_defects.maintenance_photo ? rectY - 160 : rectY + 20), { width: 240, underline: true })
@@ -1015,7 +1176,7 @@ sap.ui.define([],
                         .text(`${section_maint_act_no_defects.comments || ""}`, doc.page.width - 275, doc.y + 4, { width: 230 });
                       rectY = doc.y > rectY ? doc.y + 2 : rectY + 2;
                       doc.x = rectX;
-                      // doc.fillColor("black")
+                      // doc.fillColor("#121E28")
                       //   .fontSize(10)
                       //   .font("Helvetica-Bold")
                       //   .text(`${section_maint_act_no_defects.description || ""}`, rectX, rectY += 5, { width: doc.page.width - 90, underline: true })
@@ -1044,7 +1205,7 @@ sap.ui.define([],
                 .fontSize(14)
                 .font("Helvetica-Bold")
                 .text(`Status Log from Tablet for Notification: ${jsonData.project_details.notification_number}`, rectX + 80, rectY - 17)
-                .fillColor("black")
+                .fillColor("#121E28")
                 .font('Helvetica')
                 .fontSize(10);
               let maxY = doc.y;
@@ -1124,99 +1285,29 @@ sap.ui.define([],
               rectY = doc.y;
             }
           }
-          let addPage = (doc, page = null, checkSpace = null) => {
-            if ((!checkSpace) || (doc.page.maxY() <= doc.y + checkSpace)) {
-              doc.addPage({ size: paperSize, margins: { top: 45, bottom: 1, left: 40, right: 40 } });
-              doc.lineWidth(1)
-                .moveTo(45, doc.page.height - 28)
-                .lineTo(doc.page.width - 45, doc.page.height - 28)
-                .stroke()
-                .fillColor("#00529B")
-                .fontSize(10)
-                .text("CentiMark.com", 45, doc.page.height - 24, {
-                  link: `http://centimark.com/`,
-                  underline: false
-                })
-                .text(reportName, 190, doc.page.height - 24, {
-                  underline: false
-                });
-              if (page) {
-                doc.text(`Page ${page}`, doc.page.width - 100, doc.page.height - 24);
-              }
-              doc.fillColor('black');
-              doc.x = 45;
-              doc.y = 45;
-              return true;
-            } else {
-              return false;
-            }
-          }
-          let niceDocument = (logo) => {
-            var doc = new PDFDocument({
-              size: paperSize,
-              margins: { top: 45, bottom: 1, left: 40, right: 40 }
+          const addPage = (doc, page = null, checkSpace = null) => {
+            return addPageGeneric(doc, {
+              paperSize,
+              reportName,
+              page,
+              checkSpace,
+              footerX: 45,
+              footerLineStart: 45,
+              footerLineEnd: 45,
+              reportNameX: 190,
+              pageXOffset: 100,
+              includeSpacing: false // PM version didn’t use character/word spacing
             });
-            doc.lineWidth(1)
-              .moveTo(40, doc.page.height - 28)
-              .lineTo(doc.page.width - 45, doc.page.height - 28)
-              .stroke()
-              .fillColor("#00529B")
-              .font('Helvetica')
-              .fontSize(10)
-              .text("CentiMark.com", 40, doc.page.height - 24, {
-                link: `http://centimark.com/`,
-                underline: false,
-                characterSpacing: -0.2,
-                wordSpacing: -0.4
-              })
-              .text(reportName, 210, doc.page.height - 24, {
-                underline: false,
-                characterSpacing: -0.2,
-                wordSpacing: -0.4
-              });
-            if (page) {
-              doc.text(`Page 1`, doc.page.width - 75, doc.page.height - 24, {
-                characterSpacing: -0.2,
-                wordSpacing: -0.4
-              });
-            }
-            doc.fillColor('black');
-            doc.x = 45;
-            doc.y = 45;
-            var stream = doc.pipe(blobStream());
-            header(doc, logo);
-            doc.end();
-            stream.on('finish', function () {
-              // get a blob you can do whatever you like with
-              const blob = stream.toBlob('application/pdf');
-              // or get a blob URL for display in the browser
-              const url = stream.toBlobURL('application/pdf');
-              if (bType === 'binary') {
-                var reader = new FileReader();
-                reader.readAsDataURL(blob);
-                reader.onloadend = function () {
-                  var base64data = reader.result;
-                  resolve(atob(base64data.split('base64,')[1]));
-                }
+          };
 
-              } else if (bType === 'blobURL') {
-                resolve(url);
-              } else {
-                window.open(url, '_blank');
-                // const downloadLink = document.createElement('a');
-                // downloadLink.href = url;
-                // var date = new Date();
-                // downloadLink.download = `PM_Report_${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
-                // downloadLink.click();
-                // resolve("PDF Downloaded Successfully");
-              }
-            });
-          }
           that.toDataURL("pdfgen/CMLogotaglineHigh.png", function (logo) {
-            return niceDocument(logo, {
-              reportName: reportName,     // use your existing variable
+            niceDocument(logo, {
+              reportName: reportName,
               reportNameX: 210,
-              downloadName: 'PM_Report'
+              downloadName: 'PM_Report',
+              bType: bType,
+              headerFn: header,
+              page: 1
             });
           });
         });
@@ -1247,147 +1338,132 @@ sap.ui.define([],
 
             addPage(doc, page += 1);
 
-            var rectX = 45, rectY = 55;
+            //--------------------------------------------------------------
+            // 📄 Report Summary Header
+            //--------------------------------------------------------------
+            let rectX = 45;
+            let rectY = 45;
+
+            // Draw "Report Summary" box border only
             doc.lineJoin("round")
               .lineWidth(3)
               .strokeColor("#00529B")
-              .rect(xPointH, yPoint - 18, doc.page.width - 90, 30)
-              .stroke() // 👈 draw after defining the rect
-              .fontSize(16)
+              .rect(xPointH, rectY - 25, doc.page.width - 90, 35)
+              .stroke();
+
+            doc.fontSize(18)
               .font("Helvetica-Bold")
               .fillColor("#00529B")
-              .text("Building Section Summary", rectX, 35, {
-                width: 440,
+              .text("Report Summary", rectX, rectY - 15, {
+                width: doc.page.width - 100,
                 align: "left",
                 characterSpacing: -0.2,
                 wordSpacing: -0.4
               });
 
-            jsonData.building_section_summary.forEach(building_section_summary => {
+            //--------------------------------------------------------------
+            // 🏢 BUILDING SECTIONS
+            //--------------------------------------------------------------
+            (jsonData.building_section_summary || []).forEach((building_section_summary, bIndex) => {
+              // 🔵 BUILDING HEADER BAR
+              rectY += 35;
               doc.lineJoin("round")
                 .lineWidth(3)
                 .strokeColor("#00529B")
-                .rect(xPointH, (rectY += 32) - 25, doc.page.width - 90, 25)
-                .stroke() // 👈 draw after defining the rect
-                .fillColor('#00529B')
-                .fontSize(14)
+                .rect(xPointH, rectY - 20, doc.page.width - 90, 25)
+                .fillAndStroke("#00529B", "#00529B");
+
+              doc.fontSize(14)
                 .font("Helvetica-Bold")
-                .text(`Building: ${building_section_summary.building_name}`, rectX, rectY - 17, {
-                  width: 440,
+                .fillColor("white")
+                .text(`Building: ${building_section_summary.building_name}`, rectX, rectY - 12, {
+                  width: doc.page.width - 100,
                   align: "left",
                   characterSpacing: -0.2,
                   wordSpacing: -0.4
                 });
-              (building_section_summary.sections || []).forEach(bsSection => {
+
+              //--------------------------------------------------------------
+              // 🟧 SECTION LIST
+              //--------------------------------------------------------------
+              (building_section_summary.sections || []).forEach((bsSection) => {
+                rectY += 30;
+                // 🟧 Section header (orange)
                 doc.lineJoin("round")
                   .lineWidth(3)
-                  .strokeColor("#C47C08")
-                  .rect(xPointH, (rectY += 30) - 25, doc.page.width - 90, 25)
-                  .stroke() // 👈 draw after defining the rect
-                  .fillColor('#C47C08')
-                  .fontSize(14)
+                  .strokeColor("#F4A20B")
+                  .rect(xPointH, rectY - 20, doc.page.width - 90, 25)
+                  .fillAndStroke("#F4A20B", "#F4A20B");
+
+                doc.fontSize(13)
                   .font("Helvetica-Bold")
-                  .text(`Section: ${bsSection.section_name}`, rectX, rectY - 17, {
-                    width: 440,
+                  .fillColor("white")
+                  .text(`Section: ${bsSection.section_name}`, rectX, rectY - 12, {
+                    width: doc.page.width - 100,
                     align: "left",
                     characterSpacing: -0.2,
                     wordSpacing: -0.4
-                  })
-                  .font('Helvetica')
-                  .fontSize(10);
+                  });
 
-                doc.fillColor("black");
-                (bsSection.defects || []).forEach((defect, dIndex) => {
-                  if (addPage(doc, page += 1, 120)) {
-                    rectY = doc.y;
-                  } else {
-                    page -= 1;
-                  }
+                rectY += 15; // small space before the table
 
-                  rectY += 12; // ⬇️ small gap below section box
+                //--------------------------------------------------------------
+                // 📋 DEFECT + RECOMMENDED WORK TABLE
+                //--------------------------------------------------------------
+                const tableX = xPointH;
+                const tableWidth = doc.page.width - 90;
+                const colWidths = [tableWidth * 0.25, tableWidth * 0.35, tableWidth * 0.4];
+                const rowHeight = 22;
 
-                  const tableX = xPointH;
-                  const tableWidth = doc.page.width - 90; // match header rectangle width
-                  const colWidths = [tableWidth * 0.33, tableWidth * 0.33, tableWidth * 0.34];
-                  const rowHeight = 20;
-
-                  // 🟦 Draw border box using rect()
-                  doc.lineJoin("miter")
-                    .lineWidth(1)
-                    .strokeColor("black")
+                // Function to draw aligned table row
+                const drawTableRow = (label, activity, selection) => {
+                  doc.lineJoin("round")
+                    .lineWidth(2)
+                    .strokeColor("#00529B")
                     .rect(tableX, rectY - 5, tableWidth, rowHeight)
                     .stroke();
 
-                  // ✏️ Draw column dividers
                   let xPos = tableX;
                   for (let i = 0; i < colWidths.length - 1; i++) {
                     xPos += colWidths[i];
                     doc.moveTo(xPos, rectY - 5).lineTo(xPos, rectY - 5 + rowHeight).stroke();
                   }
 
-                  // 📝 Fill text
-                  doc.font('Helvetica')
+                  doc.font("Helvetica")
                     .fontSize(10)
-                    .fillColor('black')
-                    .text(`Defect: ${dIndex + 1}`, tableX + 5, rectY, {
-                      width: colWidths[0] - 10
+                    .fillColor("#121E28")
+                    .text(label, tableX + 6, rectY + 2, {
+                      width: colWidths[0] - 8, characterSpacing: -0.2,
+                      wordSpacing: -0.4
                     })
-                    .text(`${defect.activity || ''}`, tableX + colWidths[0] + 5, rectY, {
-                      width: colWidths[1] - 10
+                    .text(activity, tableX + colWidths[0] + 6, rectY + 2, {
+                      width: colWidths[1] - 8, characterSpacing: -0.2,
+                      wordSpacing: -0.4
                     })
-                    .text(`${defect.selection || ''}`, tableX + colWidths[0] + colWidths[1] + 5, rectY, {
-                      width: colWidths[2] - 10
+                    .text(selection, tableX + colWidths[0] + colWidths[1] + 6, rectY + 2, {
+                      width: colWidths[2] - 8, characterSpacing: -0.2,
+                      wordSpacing: -0.4
                     });
 
-                  rectY += rowHeight; // move down for next item
+                  rectY += rowHeight;
+                };
+
+                // Draw all defect rows
+                (bsSection.defects || []).forEach((defect, i) => {
+                  if (addPage(doc, page += 1, 100)) rectY = doc.y;
+                  drawTableRow(`Defect: ${i + 1}`, defect.activity || "", defect.selection || "");
                 });
-                // --- Recommended Work Table ---
-                (bsSection.recommended_work || []).forEach((recommended_work, dIndex) => {
-                  if (addPage(doc, page += 1, 120)) {
-                    rectY = doc.y;
-                  } else {
-                    page -= 1;
-                  }
 
-                  rectY += 8; // ⬇️ small gap below defects table
-
-                  const tableX = xPointH;
-                  const tableWidth = doc.page.width - 90; // match header rectangle width
-                  const colWidths = [tableWidth * 0.33, tableWidth * 0.33, tableWidth * 0.34];
-                  const rowHeight = 20;
-
-                  // 🟧 Draw border box
-                  doc.lineJoin("miter")
-                    .lineWidth(1)
-                    .strokeColor("black")
-                    .rect(tableX, rectY - 5, tableWidth, rowHeight)
-                    .stroke();
-
-                  // ✏️ Draw column lines
-                  let xPos = tableX;
-                  for (let i = 0; i < colWidths.length - 1; i++) {
-                    xPos += colWidths[i];
-                    doc.moveTo(xPos, rectY - 5).lineTo(xPos, rectY - 5 + rowHeight).stroke();
-                  }
-
-                  // 📝 Text content
-                  doc.font('Helvetica')
-                    .fontSize(10)
-                    .fillColor('black')
-                    .text(`Recommended Work: ${dIndex + 1}`, tableX + 5, rectY, {
-                      width: colWidths[0] - 10
-                    })
-                    .text(`${recommended_work.activity || ''}`, tableX + colWidths[0] + 5, rectY, {
-                      width: colWidths[1] - 10
-                    })
-                    .text(`${recommended_work.selection || ''}`, tableX + colWidths[0] + colWidths[1] + 5, rectY, {
-                      width: colWidths[2] - 10
-                    });
-
-                  rectY += rowHeight; // move down for next
+                // Draw all recommended work rows
+                (bsSection.recommended_work || []).forEach((rw, i) => {
+                  if (addPage(doc, page += 1, 100)) rectY = doc.y;
+                  drawTableRow(`Recommended Work: ${i + 1}`, rw.activity || "", rw.selection || "");
                 });
-                rectY = doc.y;
+
+                rectY += 10; // spacing after section
               });
+
+              rectY += 10; // spacing after building
             });
 
             //--------------------------------------------------------------
@@ -1431,15 +1507,30 @@ sap.ui.define([],
                   wordSpacing: -0.4
                 });
 
-              // 🔗 Add clickable "Aerial View Photo" link (if available)
+              // --------------------------------------------------------------
+              // 📸 BUILDING AERIAL VIEW PHOTO BUTTON (Blue Rounded Link)
+              // --------------------------------------------------------------
               if (building.aerial_photo_url) {
-                doc.fillColor("#00529B")
+                const btnWidth = 180;   // button width
+                const btnHeight = 15;   // button height
+                const btnX = doc.page.width - btnWidth - 54; // align to right
+                const btnY = rectY - 20; // position aligned with header
+                const radius = 6;
+
+                // 🔵 Draw button background
+                doc.save();
+                doc.roundedRect(btnX, btnY, btnWidth, btnHeight, radius)
+                  .fill("#00529B"); // deep blue
+                doc.restore();
+
+                // 🔤 Add white centered link text
+                doc.fillColor("white")
                   .fontSize(10)
-                  .text("Building Aerial View Photo", rectX, rectY - 17, {
-                    link: building.aerial_photo_url,
-                    width: doc.page.width - 100,
-                    align: "right",
-                    underline: true,
+                  .font("Helvetica-Bold")
+                  .text("Building Aerial View Photo", btnX, btnY + 4, {
+                    width: btnWidth,
+                    align: "center",
+                    link: building.aerial_photo_url, // clickable link
                     characterSpacing: -0.2,
                     wordSpacing: -0.4
                   });
@@ -1453,14 +1544,14 @@ sap.ui.define([],
               // Section header rectangle (orange)
               doc.lineJoin("round")
                 .lineWidth(3)
-                .strokeColor("#C47C08")
+                .strokeColor("#F4A20B")
                 .rect(xPointH, (rectY += buildingCommentMarginTop) - 20, doc.page.width - 90, 25)
                 .stroke();
 
               // Header text
               doc.fontSize(14)
                 .font("Helvetica-Bold")
-                .fillColor("#C47C08")
+                .fillColor("#F4A20B")
                 .text("Comments", rectX, rectY - 13, {
                   width: doc.page.width - 90,
                   align: "left",
@@ -1469,7 +1560,7 @@ sap.ui.define([],
                 });
 
               // Comment content — clean and compact
-              doc.fillColor("black")
+              doc.fillColor("#121E28")
                 .fontSize(10)
                 .font("Helvetica")
                 .text(
@@ -1492,14 +1583,14 @@ sap.ui.define([],
               // Orange header box
               doc.lineJoin("round")
                 .lineWidth(3)
-                .strokeColor("#C47C08")
+                .strokeColor("#F4A20B")
                 .rect(xPointH, photoHeaderY, doc.page.width - 90, 25)
                 .stroke();
 
               // Header text
               doc.fontSize(14)
                 .font("Helvetica-Bold")
-                .fillColor("#C47C08")
+                .fillColor("#F4A20B")
                 .text("Building Photo", rectX, photoHeaderY + 8, {
                   width: doc.page.width - 90,
                   align: "left",
@@ -1522,6 +1613,16 @@ sap.ui.define([],
                   height: imgH
                 });
                 doc.restore();
+
+                doc.fillColor("#121E28")
+                  .font("Helvetica")
+                  .fontSize(9)
+                  .text("This is a sample photo comment.", imgX, imgY + imgH + 6, {
+                    width: imgW,
+                    align: "left",
+                    characterSpacing: -0.2,
+                    wordSpacing: -0.4
+                  });
 
                 // Move Y position below the image
                 rectY = imgY + imgH + 15;
@@ -1559,15 +1660,28 @@ sap.ui.define([],
                     wordSpacing: -0.4
                   });
 
-                // 🔗 Optional "Aerial View Photo" link on right
-                if (section.aerial_photo_url) {
-                  doc.fillColor("#00529B")
+                // 🔗 Optional "Aerial View Photo" button on right
+                if (section.aerial_photo_url = 'X') {
+                  const btnWidth = 180;    // width of the button
+                  const btnHeight = 15;    // height of the button
+                  const btnX = doc.page.width - btnWidth - 54; // right-aligned
+                  const btnY = rectY - 20; // vertical alignment with section header
+                  const radius = 6;        // rounded corners
+
+                  // 🔵 Draw blue rounded rectangle background
+                  doc.save();
+                  doc.roundedRect(btnX, btnY, btnWidth, btnHeight, radius)
+                    .fill("#00529B");
+                  doc.restore();
+
+                  // 🔤 Add white text link on top (centered)
+                  doc.fillColor("white")
                     .fontSize(10)
-                    .text("Section Aerial View Photo", rectX, rectY - 17, {
-                      link: section.aerial_photo_url,
-                      width: doc.page.width - 100,
-                      align: "right",
-                      underline: true,
+                    .font("Helvetica-Bold")
+                    .text("Section Aerial View Photo", btnX, btnY + 4, {
+                      width: btnWidth,
+                      align: "center",
+                      link: section.aerial_photo_url, // clickable link
                       characterSpacing: -0.2,
                       wordSpacing: -0.4
                     });
@@ -1579,14 +1693,14 @@ sap.ui.define([],
                 const sectionMarginTop = 25; // Consistent spacing
                 doc.lineJoin("round")
                   .lineWidth(3)
-                  .strokeColor("#C47C08")
+                  .strokeColor("#F4A20B")
                   .rect(xPointH, (rectY += sectionMarginTop) - 20, doc.page.width - 90, 25)
                   .stroke();
 
                 // Header text
                 doc.fontSize(14)
                   .font("Helvetica-Bold")
-                  .fillColor("#C47C08")
+                  .fillColor("#F4A20B")
                   .text("Comments", rectX, rectY - 13, {
                     width: doc.page.width - 90,
                     align: "left",
@@ -1595,7 +1709,7 @@ sap.ui.define([],
                   });
 
                 // Comment text — compact, consistent alignment
-                doc.fillColor("black")
+                doc.fillColor("#121E28")
                   .fontSize(10)
                   .font("Helvetica")
                   .text(
@@ -1618,14 +1732,14 @@ sap.ui.define([],
                 // Orange header box
                 doc.lineJoin("round")
                   .lineWidth(3)
-                  .strokeColor("#C47C08")
+                  .strokeColor("#F4A20B")
                   .rect(xPointH, photoHeaderY, doc.page.width - 90, 25)
                   .stroke();
 
                 // Header text
                 doc.fontSize(14)
                   .font("Helvetica-Bold")
-                  .fillColor("#C47C08")
+                  .fillColor("#F4A20B")
                   .text("Section Overview Photo", rectX, photoHeaderY + 8, {
                     width: doc.page.width - 90,
                     align: "left",
@@ -1648,6 +1762,16 @@ sap.ui.define([],
                     height: imgH
                   });
                   doc.restore();
+
+                  doc.fillColor("#121E28")
+                    .font("Helvetica")
+                    .fontSize(9)
+                    .text("This is a sample photo comment.", imgX, imgY + imgH + 6, {
+                      width: imgW,
+                      align: "left",
+                      characterSpacing: -0.2,
+                      wordSpacing: -0.4
+                    });
 
                   rectY = imgY + imgH + 15; // reduce whitespace after image
                 }
@@ -1705,13 +1829,13 @@ sap.ui.define([],
                   //--------------------------------------------------------------
                   doc.lineJoin("round")
                     .lineWidth(3)
-                    .strokeColor("#C47C08")
+                    .strokeColor("#F4A20B")
                     .rect(xPointH, (rectY += 52) - 45, doc.page.width - 90, 25)
                     .stroke();
 
                   doc.fontSize(14)
                     .font("Helvetica-Bold")
-                    .fillColor("#C47C08")
+                    .fillColor("#F4A20B")
                     .text(`Field of roof : ${defect.activity || ""} ${defect.selection || ""}`, rectX, rectY - 38, {
                       width: doc.page.width - 100,
                       align: "left",
@@ -1728,14 +1852,14 @@ sap.ui.define([],
 
                   // 🟧 Overview Header
                   doc.lineJoin("round")
-                    .lineWidth(2)
-                    .strokeColor("#C47C08")
+                    .lineWidth(3)
+                    .strokeColor("#F4A20B")
                     .rect(leftColX, sectionTopY, 282, 25)
                     .stroke();
 
                   doc.fontSize(12)
                     .font("Helvetica-Bold")
-                    .fillColor("#C47C08")
+                    .fillColor("#F4A20B")
                     .text("Overview:", rectX, sectionTopY + 7, {
                       characterSpacing: -0.2,
                       wordSpacing: -0.4
@@ -1757,7 +1881,7 @@ sap.ui.define([],
                     });
                     doc.restore();
 
-                    doc.fillColor("black")
+                    doc.fillColor("#121E28")
                       .font("Helvetica")
                       .fontSize(9)
                       .text("This is a sample photo comment.", imgX, imgY + imgH + 6, {
@@ -1770,15 +1894,15 @@ sap.ui.define([],
 
                   // 🟧 Description Header
                   doc.lineJoin("round")
-                    .lineWidth(2)
-                    .strokeColor("#C47C08")
+                    .lineWidth(3)
+                    .strokeColor("#F4A20B")
                     .rect(rightColX, sectionTopY, doc.page.width - 380, 25)
                     .stroke();
 
                   doc.fontSize(12)
                     .font("Helvetica-Bold")
-                    .fillColor("#C47C08")
-                    .text("Description:", rightColX  + 5, sectionTopY + 7, {
+                    .fillColor("#F4A20B")
+                    .text("Description:", rightColX + 5, sectionTopY + 7, {
                       characterSpacing: -0.2,
                       wordSpacing: -0.4
                     });
@@ -1786,7 +1910,7 @@ sap.ui.define([],
                   // 📝 Description text
                   doc.font("Helvetica")
                     .fontSize(10)
-                    .fillColor("black")
+                    .fillColor("#121E28")
                     .text(defect.description || "No description provided.", rightColX, sectionTopY + 35, {
                       width: doc.page.width - 380,
                       align: "left",
@@ -1797,15 +1921,15 @@ sap.ui.define([],
                   // 🟧 Comments Header
                   const commentY = doc.y + 10;
                   doc.lineJoin("round")
-                    .lineWidth(2)
-                    .strokeColor("#C47C08")
+                    .lineWidth(3)
+                    .strokeColor("#F4A20B")
                     .rect(rightColX, commentY, doc.page.width - 380, 25)
                     .stroke();
 
                   doc.fontSize(12)
                     .font("Helvetica-Bold")
-                    .fillColor("#C47C08")
-                    .text("Comments:", rightColX  + 5, commentY + 7, {
+                    .fillColor("#F4A20B")
+                    .text("Comments:", rightColX + 5, commentY + 7, {
                       characterSpacing: -0.2,
                       wordSpacing: -0.4
                     });
@@ -1813,7 +1937,7 @@ sap.ui.define([],
                   // 🗒️ Comment text
                   doc.font("Helvetica")
                     .fontSize(10)
-                    .fillColor("black")
+                    .fillColor("#121E28")
                     .text(defect.comments || "No comments provided.", rightColX, commentY + 32, {
                       width: doc.page.width - 380,
                       align: "left",
@@ -1828,14 +1952,14 @@ sap.ui.define([],
 
                   // 🔶 Defect Header
                   doc.lineJoin("round")
-                    .lineWidth(2)
-                    .strokeColor("#C47C08")
+                    .lineWidth(3)
+                    .strokeColor("#F4A20B")
                     .rect(leftColX, photoRowY, 282, 25)
                     .stroke();
 
                   doc.font("Helvetica-Bold")
                     .fontSize(12)
-                    .fillColor("#C47C08")
+                    .fillColor("#F4A20B")
                     .text("Defect:", rectX, photoRowY + 7, {
                       characterSpacing: -0.2,
                       wordSpacing: -0.4
@@ -1856,7 +1980,7 @@ sap.ui.define([],
                     });
                     doc.restore();
 
-                    doc.fillColor("black")
+                    doc.fillColor("#121E28")
                       .font("Helvetica")
                       .fontSize(9)
                       .text("This is a sample photo comment.", leftColX, dImgY + imgH + 6, {
@@ -1869,15 +1993,15 @@ sap.ui.define([],
 
                   // 🔶 Repair Header
                   doc.lineJoin("round")
-                    .lineWidth(2)
-                    .strokeColor("#C47C08")
+                    .lineWidth(3)
+                    .strokeColor("#F4A20B")
                     .rect(rightColX, photoRowY, doc.page.width - 380, 25)
                     .stroke();
 
                   doc.font("Helvetica-Bold")
                     .fontSize(12)
-                    .fillColor("#C47C08")
-                    .text("Repair:", rightColX  + 5, photoRowY + 7, {
+                    .fillColor("#F4A20B")
+                    .text("Repair:", rightColX + 5, photoRowY + 7, {
                       width: doc.page.width - 380,
                       characterSpacing: -0.2,
                       wordSpacing: -0.4
@@ -1898,7 +2022,7 @@ sap.ui.define([],
                     });
                     doc.restore();
 
-                    doc.fillColor("black")
+                    doc.fillColor("#121E28")
                       .font("Helvetica")
                       .fontSize(9)
                       .text("This is a sample photo comment.", rightColX, rImgY + imgH + 6, {
@@ -1911,297 +2035,372 @@ sap.ui.define([],
 
                 });
 
-                // (section.recommended_work || []).forEach(recommended_work => {
-                //   if (addPage(doc, page += 1, 270)) {
-                //     rectY = doc.y;
-                //   } else {
-                //     page -= 1;
-                //   }
-                //   doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
-                //     .fill('#C47C08')
-                //     .fillColor("white")
-                //     .fontSize(14)
-                //     .text(`RECOMMENDED WORK PHOTO`, rectX + 20, rectY - 17, {
-                //       characterSpacing: -0.2,
-                //       wordSpacing: -0.4
-                //     })
-                //     .text(`DESCRIPTION`, doc.page.width - 220, rectY - 17, {
-                //       characterSpacing: -0.2,
-                //       wordSpacing: -0.4
-                //     });
-                //   if (recommended_work.photo) {
-                //     doc.image(`data:image/jpeg;base64,${recommended_work.photo}`, rectX, (rectY += 182) - 180, { width: 250, height: 180 });
-                //   }
-                //   if (recommended_work.comments) {
-                //     doc.fillColor("black")
-                //       .fontSize(10)
-                //       .font("Helvetica-Bold")
-                //       .text(`${recommended_work.selection || ''}`, doc.page.width - 288, rectY - 150, {
-                //         width: 240,
-                //         characterSpacing: -0.2,
-                //         wordSpacing: -0.4
-                //       })
-                //       .font("Helvetica")
-                //       .text(`${recommended_work.description || ''}`, doc.page.width - 285, doc.y, {
-                //         width: 240,
-                //         characterSpacing: -0.2,
-                //         wordSpacing: -0.4
-                //       })
-                //       .font("Helvetica-Bold")
-                //       .text(`${recommended_work.selection ? 'COMMENTS' : ''}`, doc.page.width - 288, doc.y + 4, {
-                //         width: 240,
-                //         characterSpacing: -0.2,
-                //         wordSpacing: -0.4
-                //       })
-                //       .font("Helvetica")
-                //       .text(`${recommended_work.comments || ''}`, doc.page.width - 285, doc.y, {
-                //         width: 240,
-                //         characterSpacing: -0.2,
-                //         wordSpacing: -0.4
-                //       });
-                //   }
+                //--------------------------------------------------------------
+                // 🧱 LOOP THROUGH RECOMMENDED WORK ITEMS
+                //--------------------------------------------------------------
+                (section.recommended_work || []).forEach((work) => {
+                  //--------------------------------------------------------------
+                  // 🏗️ PAGE HANDLING
+                  //--------------------------------------------------------------
+                  if (addPage(doc, page += 1, 270)) {
+                    rectY = doc.y;
+                  } else {
+                    page -= 1;
+                  }
 
-                // });
+                  //--------------------------------------------------------------
+                  // 🟦 HEADER — Recommended Work for Section
+                  //--------------------------------------------------------------
+                  const headerX = rectX;
+                  const headerWidth = doc.page.width - 90;
+
+                  doc.lineJoin("round")
+                    .lineWidth(3)
+                    .strokeColor("#00529B")
+                    .rect(xPointH, (rectY += 25) - 25, headerWidth, 25)
+                    .stroke();
+
+                  doc.fontSize(14)
+                    .font("Helvetica-Bold")
+                    .fillColor("#00529B")
+                    .text("Recommended Work for section:", headerX, rectY - 17, {
+                      width: headerWidth - 20,
+                      align: "left",
+                      characterSpacing: -0.2,
+                      wordSpacing: -0.4
+                    });
+
+                  doc.fontSize(14)
+                    .font("Helvetica-Bold")
+                    .fillColor("#00529B")
+                    .text(`${section.section_name || ""}`, headerX + 200, rectY - 18, {
+                      width: headerWidth - 220,
+                      align: "left",
+                      characterSpacing: -0.2,
+                      wordSpacing: -0.4
+                    });
+
+                  //--------------------------------------------------------------
+                  // 🟧 DRAINAGE / WORK TITLE
+                  //--------------------------------------------------------------
+                  doc.lineJoin("round")
+                    .lineWidth(3)
+                    .strokeColor("#F4A20B")
+                    .rect(xPointH, (rectY += 30) - 25, headerWidth, 25)
+                    .stroke();
+
+                  doc.fontSize(13)
+                    .font("Helvetica-Bold")
+                    .fillColor("#F4A20B")
+                    .text(`Drainage: ${work.selection || ""}`, headerX, rectY - 17, {
+                      width: headerWidth - 20,
+                      align: "left",
+                      characterSpacing: -0.2,
+                      wordSpacing: -0.4
+                    });
+
+                  //--------------------------------------------------------------
+                  // 🟧 COMMENTS SECTION
+                  //--------------------------------------------------------------
+                  doc.lineJoin("round")
+                    .lineWidth(3)
+                    .strokeColor("#F4A20B")
+                    .rect(xPointH, (rectY += 25) - 20, headerWidth, 25)
+                    .stroke();
+
+                  doc.fontSize(12)
+                    .font("Helvetica-Bold")
+                    .fillColor("#F4A20B")
+                    .text("Comments:", headerX, rectY - 13, {
+                      width: headerWidth - 20,
+                      align: "left",
+                      characterSpacing: -0.2,
+                      wordSpacing: -0.4
+                    });
+
+                  // Comment text
+                  doc.font("Helvetica")
+                    .fontSize(10)
+                    .fillColor("black")
+                    .text(work.comments || "No comments provided.", headerX, rectY + 20, {
+                      width: headerWidth,
+                      align: "left",
+                      characterSpacing: -0.2,
+                      wordSpacing: -0.4
+                    });
+
+                  //--------------------------------------------------------------
+                  // 🟧 PHOTOS SECTION
+                  //--------------------------------------------------------------
+                  const photoHeaderY = doc.y + 10;
+
+                  // Orange Photo(s) header
+                  doc.lineJoin("round")
+                    .lineWidth(3)
+                    .strokeColor("#F4A20B")
+                    .rect(xPointH, photoHeaderY, headerWidth, 25)
+                    .stroke();
+
+                  doc.fontSize(12)
+                    .font("Helvetica-Bold")
+                    .fillColor("#F4A20B")
+                    .text("Photo(s):", headerX, photoHeaderY + 7, {
+                      width: headerWidth,
+                      align: "left",
+                      characterSpacing: -0.2,
+                      wordSpacing: -0.4
+                    });
+
+                  //--------------------------------------------------------------
+                  // 🖼️ PHOTOS GRID (2×2 Layout)
+                  //--------------------------------------------------------------
+                  const photoStartY = photoHeaderY + 32;
+                  const imgW = 282;
+                  const imgH = 212;
+                  const radius = 4;
+                  const colGap = 25; // spacing between two photos
+
+                  const photos = work.photos || [];
+                  let photoIndex = 0;
+                  let col = 0, row = 0;
+
+                  photos.forEach((photo, i) => {
+                    const imgX = headerX + col * (imgW + colGap);
+                    const imgY = photoStartY + row * (imgH + 60); // 60px = image + caption gap
+
+                    // Draw image
+                    if (photo.photo) {
+                      doc.save();
+                      doc.roundedRect(imgX, imgY, imgW, imgH, radius).clip();
+                      doc.image(`data:image/jpg;base64,${photo.photo}`, imgX, imgY, {
+                        width: imgW,
+                        height: imgH
+                      });
+                      doc.restore();
+                    }
+
+                    // Caption
+                    doc.fillColor("black")
+                      .font("Helvetica")
+                      .fontSize(9)
+                      .text(photo.comment || "This is a sample photo comment.", imgX, imgY + imgH + 6, {
+                        width: imgW,
+                        align: "left",
+                        characterSpacing: -0.2,
+                        wordSpacing: -0.4
+                      });
+
+                    // Layout handling for grid (2 per row)
+                    col++;
+                    if (col >= 2) {
+                      col = 0;
+                      row++;
+                    }
+                  });
+
+                  rectY = photoStartY + Math.ceil(photos.length / 2) * (imgH + 60) + 10;
+                });
+
               });
             });
+            //--------------------------------------------------------------
+            // 💼 Labor and Materials Section (Perfect Alignment)
+            //--------------------------------------------------------------
             if (jsonData.labor_materials_summary) {
               addPage(doc, page += 1);
+              let xPointH = 45;
+              let rectY = 45;
+              const fullWidth = doc.page.width - 90;
 
-              rectX = 45;
-              rectY = 45;
-              doc.rect(rectX, (rectY += 27) - 25, doc.page.width - 90, 25)
-                .fill('#00529B')
-                .fillColor("white")
-                .fontSize(14)
+              // 📘 Header
+              doc.lineJoin("round")
+                .lineWidth(2)
+                .strokeColor("#00529B")
+                .rect(xPointH, rectY - 15, fullWidth, 30)
+                .stroke()
                 .font("Helvetica-Bold")
-                .text(`LABOR AND MATERIALS FOR: ${jsonData.project_details.notification_number || ''}`, rectX, rectY - 17, {
-                  width: doc.page.width - 90,
-                  align: "center",
-                  characterSpacing: -0.2,
-                  wordSpacing: -0.4
-                });
-              doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
-                .fill('#C47C08')
-                .fillColor("white")
-                .fontSize(14)
-                .font("Helvetica-Bold")
-                .text(`Material`, rectX + 100, rectY - 17, {
-                  characterSpacing: -0.2,
-                  wordSpacing: -0.4
-                })
-                .text(`Total: ${parseFloat(jsonData.labor_materials_summary.material_total || '0').toLocaleString('en-US', currencyOptions)}`, rectX + 300, rectY - 17, {
-                  characterSpacing: -0.2,
-                  wordSpacing: -0.4
-                })
-                .fillColor("black")
-                .font('Helvetica')
-                .fontSize(10);
-              let maxY = doc.y;
-              jsonData.labor_materials_summary.materials = jsonData.labor_materials_summary.materials ? [{
-                material_description: "Description",
-                qty: "Quantity",
-                unit_price: 'Unit Price',
-                total: "Total"
-              }].concat(jsonData.labor_materials_summary.materials) : [];
-              (jsonData.labor_materials_summary.materials || []).forEach((material, dIndex) => {
-                if (addPage(doc, page += 1, 100)) {
-                  rectY = doc.y;
-                  maxY = doc.y;
-                  rectX = doc.x;
-                } else {
-                  page -= 1;
-                }
-                if (dIndex === 0) {
-                  doc.font("Helvetica-Bold");
-                } else {
-                  doc.font('Helvetica');
-                }
-                doc.lineWidth(1)
-                  .moveTo(rectX, doc.y)
-                  .lineTo(doc.page.width - 45, doc.y)
-                  .stroke();
-                rectY = doc.y + 12;
-                doc.text(`${material.material_description}`, rectX + 5, rectY, {
-                  width: 115,
-                  align: 'left',
-                  characterSpacing: -0.2,
-                  wordSpacing: -0.4
-                });
-                maxY = maxY < doc.y ? doc.y : maxY;
-                doc.text(`${isNaN(material.qty) ? material.qty : parseFloat(material.qty).toLocaleString('en-US', decimalOptions)}`, rectX + 130, rectY, {
-                  width: 115,
-                  align: 'right',
-                  characterSpacing: -0.2,
-                  wordSpacing: -0.4
-                });
-                maxY = maxY < doc.y ? doc.y : maxY;
-                doc.text(`${isNaN(material.unit_price) ? material.unit_price : parseFloat(material.unit_price).toLocaleString('en-US', currencyOptions)}`, rectX + 250, rectY, {
-                  width: 115,
-                  align: 'right',
-                  characterSpacing: -0.2,
-                  wordSpacing: -0.4
-                });
-                maxY = maxY < doc.y ? doc.y : maxY;
-                doc.text(`${isNaN(material.total) ? material.total : parseFloat(material.total).toLocaleString('en-US', currencyOptions)}`, rectX + 370, rectY, {
-                  width: 115,
-                  align: 'right',
-                  characterSpacing: -0.2,
-                  wordSpacing: -0.4
-                });
-                doc.y = maxY < doc.y ? doc.y : maxY;
-                doc.lineWidth(1)
-                  .moveTo(rectX, rectY - 12)
-                  .lineTo(rectX, doc.y)
-                  .moveTo(rectX + 130, rectY - 12)
-                  .lineTo(rectX + 130, doc.y)
-                  .moveTo(rectX + 250, rectY - 12)
-                  .lineTo(rectX + 250, doc.y)
-                  .moveTo(rectX + 370, rectY - 12)
-                  .lineTo(rectX + 370, doc.y)
-                  .moveTo(rectX + doc.page.width - 90, rectY - 12)
-                  .lineTo(rectX + doc.page.width - 90, doc.y)
-                  .stroke();
-                doc.lineWidth(1)
-                  .moveTo(rectX, doc.y)
-                  .lineTo(doc.page.width - 45, doc.y)
-                  .stroke();
-              });
-              rectY = doc.y;
-              doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
-                .fill('#C47C08')
-                .fillColor("white")
-                .fontSize(14)
-                .font("Helvetica-Bold")
-                .text(`Labor and Fees`, rectX + 100, rectY - 17, {
-                  characterSpacing: -0.2,
-                  wordSpacing: -0.4
-                })
-                .text(`Total: ${parseFloat(jsonData.labor_materials_summary.labor_and_fees_total ? jsonData.labor_materials_summary.labor_and_fees_total : "0.00").toLocaleString('en-US', currencyOptions)}`, rectX + 300, rectY - 17, {
-                  characterSpacing: -0.2,
-                  wordSpacing: -0.4
-                })
-                .fillColor("black")
-                .font('Helvetica')
-                .fontSize(10);
-              maxY = doc.y;
+                .fontSize(18)
+                .fillColor("#00529B")
+                .text("Labor and Materials", xPointH + 10, rectY - 10, { align: "left" });
 
-              jsonData.labor_materials_summary.labor_and_fees = jsonData.labor_materials_summary.labor_and_fees ? [{
-                type: "Fee Type",
-                qty: "Hours",
-                rate: 'Rate',
-                total: "Total"
-              }].concat(jsonData.labor_materials_summary.labor_and_fees) : [];
-              (jsonData.labor_materials_summary.labor_and_fees || []).forEach((labor_and_fees, dIndex) => {
-                if (addPage(doc, page += 1, 100)) {
-                  rectY = doc.y;
-                  maxY = doc.y;
-                  rectX = doc.x;
-                } else {
-                  page -= 1;
-                }
-                if (dIndex === 0) {
-                  doc.font("Helvetica-Bold");
-                } else {
-                  doc.font('Helvetica');
-                }
-                doc.lineWidth(1)
-                  .moveTo(rectX, doc.y)
-                  .lineTo(doc.page.width - 45, doc.y)
-                  .stroke();
-                rectY = doc.y + 12;
-                doc.text(`${labor_and_fees.type}`, rectX + 5, rectY, {
-                  width: 115,
-                  align: 'left',
-                  characterSpacing: -0.2,
-                  wordSpacing: -0.4
-                });
-                maxY = maxY < doc.y ? doc.y : maxY;
-                doc.text(`${isNaN(labor_and_fees.qty) ? labor_and_fees.qty : parseFloat(labor_and_fees.qty).toLocaleString('en-US', decimalOptions)}`, rectX + 130, rectY, {
-                  width: 115,
-                  align: 'right',
-                  characterSpacing: -0.2,
-                  wordSpacing: -0.4
-                });
-                maxY = maxY < doc.y ? doc.y : maxY;
-                doc.text(`${isNaN(labor_and_fees.rate) ? labor_and_fees.rate : parseFloat(labor_and_fees.rate).toLocaleString('en-US', currencyOptions)}`, rectX + 250, rectY, {
-                  width: 115,
-                  align: 'right',
-                  characterSpacing: -0.2,
-                  wordSpacing: -0.4
-                });
-                maxY = maxY < doc.y ? doc.y : maxY;
-                doc.text(`${isNaN(labor_and_fees.total) ? labor_and_fees.total : parseFloat(labor_and_fees.total).toLocaleString('en-US', currencyOptions)}`, rectX + 370, rectY, {
-                  width: 115,
-                  align: 'right',
-                  characterSpacing: -0.2,
-                  wordSpacing: -0.4
-                });
-                doc.y = maxY < doc.y ? doc.y : maxY;
-                doc.lineWidth(1)
-                  .moveTo(rectX, rectY - 12)
-                  .lineTo(rectX, doc.y)
-                  .moveTo(rectX + 130, rectY - 12)
-                  .lineTo(rectX + 130, doc.y)
-                  .moveTo(rectX + 250, rectY - 12)
-                  .lineTo(rectX + 250, doc.y)
-                  .moveTo(rectX + 370, rectY - 12)
-                  .lineTo(rectX + 370, doc.y)
-                  .moveTo(rectX + doc.page.width - 90, rectY - 12)
-                  .lineTo(rectX + doc.page.width - 90, doc.y)
-                  .stroke();
-                doc.lineWidth(1)
-                  .moveTo(rectX, doc.y)
-                  .lineTo(rectX + doc.page.width - 90, doc.y)
-                  .stroke();
+              rectY += 35;
+
+              //--------------------------------------------------------------
+              // 🟦 Labor and Fees Header
+              //--------------------------------------------------------------
+              doc.rect(xPointH, rectY, fullWidth, 25)
+                .fill("#00529B");
+              doc.font("Helvetica-Bold").fontSize(13).fillColor("white")
+                .text("Labor and Fees", xPointH + 10, rectY + 6);
+
+              rectY += 25;
+
+              // 🟧 Column Header Row
+              const colWidths = [fullWidth * 0.40, fullWidth * 0.20, fullWidth * 0.20, fullWidth * 0.20];
+              const tableX = xPointH;
+              const rowHeight = 22;
+
+              doc.rect(tableX, rectY, fullWidth, rowHeight)
+                .fill("#F4A20B")
+                .strokeColor("white")
+                .stroke();
+
+              const headers = ["Type", "Hrs/Qty", "Rate", "Total"];
+              let headerX = tableX;
+              headers.forEach((text, i) => {
+                doc.fillColor("white")
+                  .font("Helvetica-Bold")
+                  .fontSize(11)
+                  .text(text, headerX + 5, rectY + 6, {
+                    width: colWidths[i] - 10,
+                    align: i === 0 ? "left" : "right"
+                  });
+                headerX += colWidths[i];
               });
 
-              rectY = doc.y;
-              // tax rate
-              doc.rect(rectX, (rectY += 25) - 20, doc.page.width - 90, 25)
-                .fill('#C47C08')
-                .fillColor("white")
-                .fontSize(14)
-                .font("Helvetica-Bold")
-                .text(`TAX RATE`, rectX + 100, rectY - 14, {
-                  characterSpacing: -0.2,
-                  wordSpacing: -0.4
-                })
-                .text(`${parseFloat(jsonData.labor_materials_summary.taxes ? jsonData.labor_materials_summary.taxes.tax_rate ? jsonData.labor_materials_summary.taxes.tax_rate : "0.00" : "0.00").toLocaleString('en-US', currencyOptions)} %`, rectX + 310, rectY - 14, {
-                  characterSpacing: -0.2,
-                  wordSpacing: -0.4
-                });
+              rectY += rowHeight;
 
-              // sub total
-              doc.rect(rectX, (rectY += 25) - 20, doc.page.width - 90, 25)
-                .fill('#C47C08')
-                .fillColor("white")
-                .fontSize(14)
-                .font("Helvetica-Bold")
-                .text(`TAX AMOUNT`, rectX + 100, rectY - 14, {
-                  characterSpacing: -0.2,
-                  wordSpacing: -0.4
-                })
-                .text(`${parseFloat(jsonData.labor_materials_summary.taxes ? jsonData.labor_materials_summary.taxes.total ? jsonData.labor_materials_summary.taxes.total : "0.00" : "0.00").toLocaleString('en-US', currencyOptions)}`, rectX + 310, rectY - 14, {
-                  characterSpacing: -0.2,
-                  wordSpacing: -0.4
-                });
+              //--------------------------------------------------------------
+              // 🧾 Labor Rows
+              //--------------------------------------------------------------
+              (jsonData.labor_materials_summary.labor_and_fees || []).forEach((row, i) => {
+                doc.lineWidth(1).strokeColor("black");
+                let colX = tableX;
+                doc.rect(tableX, rectY, fullWidth, rowHeight).stroke();
 
-              // grand total
-              doc.rect(rectX, (rectY += 25) - 20, doc.page.width - 90, 25)
-                .fill('#C47C08')
-                .fillColor("white")
-                .fontSize(14)
-                .font("Helvetica-Bold")
-                .text(`GRAND TOTAL`, rectX + 100, rectY - 14, {
-                  characterSpacing: -0.2,
-                  wordSpacing: -0.4
-                })
-                // .text(`Total: ${parseFloat(jsonData.labor_materials_summary.grand_total).toLocaleString('en-US', currencyOptions)}`, rectX + 300, rectY - 17);
-                .text(parseFloat(jsonData.labor_materials_summary.grand_total).toLocaleString('en-US', currencyOptions), rectX + 310, rectY - 14, {
-                  characterSpacing: -0.2,
-                  wordSpacing: -0.4
-                });
+                doc.font("Helvetica").fontSize(10).fillColor("#121E28");
+                doc.text(row.type || "", colX + 5, rectY + 6, { width: colWidths[0] - 10 });
+                colX += colWidths[0];
+                doc.text(row.qty || "", colX, rectY + 6, { width: colWidths[1] - 5, align: "right" });
+                colX += colWidths[1];
+                doc.text(row.rate || "", colX, rectY + 6, { width: colWidths[2] - 5, align: "right" });
+                colX += colWidths[2];
+                doc.text(row.total || "", colX, rectY + 6, { width: colWidths[3] - 5, align: "right" });
+
+                rectY += rowHeight;
+              });
+
+              //--------------------------------------------------------------
+              // 🟧 Labor Total Row
+              //--------------------------------------------------------------
+              doc.rect(xPointH, rectY, fullWidth, 22).fill("#F4A20B");
+              doc.font("Helvetica-Bold").fontSize(11).fillColor("white")
+                .text("Labor and Fees Total:", xPointH + 10, rectY + 5);
+              doc.text(
+                `${parseFloat(jsonData.labor_materials_summary.labor_and_fees_total || 0).toLocaleString('en-US', currencyOptions)}`,
+                xPointH + fullWidth - 100,
+                rectY + 5,
+                { width: 90, align: "right" }
+              );
+
+              rectY += 30;
+
+              //--------------------------------------------------------------
+              // 🟦 Materials Header
+              //--------------------------------------------------------------
+              doc.rect(xPointH, rectY, fullWidth, 25)
+                .fill("#00529B");
+              doc.font("Helvetica-Bold").fontSize(13).fillColor("white")
+                .text("Materials", xPointH + 10, rectY + 6);
+
+              rectY += 25;
+
+              // 🟧 Material Column Headers
+              const matHeaders = ["Description", "Qty", "Unit Price", "Total"];
+              doc.rect(tableX, rectY, fullWidth, rowHeight).fill("#F4A20B").stroke();
+              let matX = tableX;
+              matHeaders.forEach((text, i) => {
+                doc.fillColor("white")
+                  .font("Helvetica-Bold")
+                  .fontSize(11)
+                  .text(text, matX + 5, rectY + 6, {
+                    width: colWidths[i] - 10,
+                    align: i === 0 ? "left" : "right"
+                  });
+                matX += colWidths[i];
+              });
+
+              rectY += rowHeight;
+
+              //--------------------------------------------------------------
+              // 📋 Material Rows
+              //--------------------------------------------------------------
+              (jsonData.labor_materials_summary.materials || []).forEach((row, i) => {
+                doc.lineWidth(1).strokeColor("black");
+                let colX = tableX;
+                doc.rect(tableX, rectY, fullWidth, rowHeight).stroke();
+
+                doc.font("Helvetica").fontSize(10).fillColor("#121E28");
+                doc.text(row.material_description || "", colX + 5, rectY + 6, { width: colWidths[0] - 10 });
+                colX += colWidths[0];
+                doc.text(row.qty || "", colX, rectY + 6, { width: colWidths[1] - 5, align: "right" });
+                colX += colWidths[1];
+                doc.text(row.unit_price || "", colX, rectY + 6, { width: colWidths[2] - 5, align: "right" });
+                colX += colWidths[2];
+                doc.text(row.total || "", colX, rectY + 6, { width: colWidths[3] - 5, align: "right" });
+
+                rectY += rowHeight;
+              });
+
+              //--------------------------------------------------------------
+              // 🟧 Materials Total Row
+              //--------------------------------------------------------------
+              doc.rect(xPointH, rectY, fullWidth, 22).fill("#F4A20B");
+              doc.font("Helvetica-Bold").fontSize(11).fillColor("white")
+                .text("Materials Total:", xPointH + 10, rectY + 5);
+              doc.text(
+                `${parseFloat(jsonData.labor_materials_summary.material_total || 0).toLocaleString('en-US', currencyOptions)}`,
+                xPointH + fullWidth - 100,
+                rectY + 5,
+                { width: 90, align: "right" }
+              );
+
+              rectY += 25;
+
+              //--------------------------------------------------------------
+              // 🔵 Totals Section
+              //--------------------------------------------------------------
+              const totalsHeight = 70;
+              doc.rect(xPointH, rectY, fullWidth, totalsHeight).fill("#00529B");
+
+              doc.fillColor("white").font("Helvetica").fontSize(11);
+              doc.text("Subtotal:", xPointH + fullWidth - 200, rectY + 10, { align: "left" });
+              doc.text(
+                `${parseFloat(jsonData.labor_materials_summary.subtotal || 0).toLocaleString('en-US', currencyOptions)}`,
+                xPointH + fullWidth - 100,
+                rectY + 10,
+                { align: "right" }
+              );
+
+              doc.text(
+                `Tax Amount (Rate ${parseFloat(jsonData.labor_materials_summary.taxes?.tax_rate || 0).toFixed(2)}%):`,
+                xPointH + fullWidth - 200,
+                rectY + 25,
+                { align: "left" }
+              );
+              doc.text(
+                `${parseFloat(jsonData.labor_materials_summary.taxes?.total || 0).toLocaleString('en-US', currencyOptions)}`,
+                xPointH + fullWidth - 100,
+                rectY + 25,
+                { align: "right" }
+              );
+
+              // Divider line
+              doc.lineWidth(1).strokeColor("white")
+                .moveTo(xPointH + fullWidth - 220, rectY + 42)
+                .lineTo(xPointH + fullWidth - 40, rectY + 42)
+                .stroke();
+
+              doc.font("Helvetica-Bold").fontSize(12);
+              doc.text("Grand Total:", xPointH + fullWidth - 200, rectY + 50, { align: "left" });
+              doc.text(
+                `${parseFloat(jsonData.labor_materials_summary.grand_total || 0).toLocaleString('en-US', currencyOptions)}`,
+                xPointH + fullWidth - 100,
+                rectY + 50,
+                { align: "right" }
+              );
             }
+
 
             if (jsonData.status_log) {
               // Status Section  
@@ -2217,7 +2416,7 @@ sap.ui.define([],
                   characterSpacing: -0.2,
                   wordSpacing: -0.4
                 })
-                .fillColor("black")
+                .fillColor("#121E28")
                 .font('Helvetica')
                 .fontSize(10);
               let maxY = doc.y;
@@ -2307,123 +2506,32 @@ sap.ui.define([],
               rectY = doc.y;
             }
           }
-          let addPage = (doc, page = null, checkSpace = null) => {
-            // "checkspace" will check if there is enough space left on the page.
-            if ((!checkSpace) || (doc.page.maxY() <= doc.y + checkSpace)) {
-              doc.addPage({ size: paperSize, margins: { top: 45, bottom: 1, left: 40, right: 40 } });
-              doc.lineWidth(1)
-                .moveTo(40, doc.page.height - 28)
-                .lineTo(doc.page.width - 45, doc.page.height - 28)
-                .stroke()
-                .fillColor("#00529B")
-                .font('Helvetica')
-                .fontSize(10)
-                .text("CentiMark.com", 40, doc.page.height - 24, {
-                  link: `http://centimark.com/`,
-                  underline: false,
-                  characterSpacing: -0.2,
-                  wordSpacing: -0.4
-                })
-                .text(reportName, 192, doc.page.height - 24, {
-                  underline: false,
-                  characterSpacing: -0.2,
-                  wordSpacing: -0.4
-                });
-              if (page) {
-                doc.text(`Page ${page}`, doc.page.width - 75, doc.page.height - 24, {
-                  characterSpacing: -0.2,
-                  wordSpacing: -0.4
-                });
-              }
-              doc.fillColor('black');
-              doc.x = 45;
-              doc.y = 45;
-              return true;
-            } else {
-              return false;
-            }
-          }
-          let niceDocument = (logo) => {
-            var doc = new PDFDocument({
-              size: paperSize,
-              margins: { top: 45, bottom: 1, left: 40, right: 40 }
+          const addPage = (doc, page = null, checkSpace = null) => {
+            return addPageGeneric(doc, {
+              paperSize,
+              reportName,
+              page,
+              checkSpace,
+              footerX: 40,
+              footerLineStart: 40,
+              footerLineEnd: 45,
+              reportNameX: 230,
+              pageXOffset: 85,
+              includeSpacing: true // TM version used character/word spacing
             });
-
-            PDFDocument.prototype.roundedImage = function (imgSrc, x, y, width, height, radius) {
-              this.save();
-              this.roundedRect(x, y, width, height, radius).clip();
-              this.image(imgSrc, x, y, { width, height });
-              this.restore();
-              return this;
-            };
-
-            doc.lineWidth(1)
-              .moveTo(40, doc.page.height - 28)
-              .lineTo(doc.page.width - 45, doc.page.height - 28)
-              .stroke()
-              .fillColor("#00529B")
-              .font('Helvetica')
-              .fontSize(10)
-              .text("CentiMark.com", 40, doc.page.height - 24, {
-                link: `http://centimark.com/`,
-                underline: false,
-                characterSpacing: -0.2,
-                wordSpacing: -0.4
-              })
-              .text(reportName, 192, doc.page.height - 24, {
-                underline: false,
-                characterSpacing: -0.2,
-                wordSpacing: -0.4
-              });
-            if (page) {
-              doc.text(`Page 1`, doc.page.width - 75, doc.page.height - 24, {
-                characterSpacing: -0.2,
-                wordSpacing: -0.4
-              });
-            }
-            doc.fillColor('black');
-            doc.x = 45;
-            doc.y = 45;
-            var stream = doc.pipe(blobStream());
-            header(doc, logo);
-            doc.end();
-            stream.on('finish', function () {
-              // get a blob you can do whatever you like with
-              const blob = stream.toBlob('application/pdf');
-              // or get a blob URL for display in the browser
-              const url = stream.toBlobURL('application/pdf');
-              if (bType === 'binary') {
-                var reader = new FileReader();
-                reader.readAsDataURL(blob);
-                reader.onloadend = function () {
-                  var base64data = reader.result;
-                  resolve(atob(base64data.split('base64,')[1]));
-                }
-
-              } else if (bType === 'blobURL') {
-                resolve(url);
-              } else {
-                window.open(url, '_blank');
-                // const downloadLink = document.createElement('a');
-                // downloadLink.href = url;
-                // var date = new Date();
-                // downloadLink.download = `ServiceRepairSummaryForSvcMgr_${date.getFullYear()}${(date.getMonth() + 1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
-                // downloadLink.click();
-                // resolve("PDF Downloaded Successfully");
-              }
-            });
-          }
+          };
           that.toDataURL("pdfgen/CMLogotaglineHigh.png", function (logo) {
-            return niceDocument(logo, {
+            niceDocument(logo, {
               reportName: reportName,
               reportNameX: 192,
-              downloadName: 'ServiceRepairSummaryForSvcMgr'
+              downloadName: 'ServiceRepairSummaryForSvcMgr',
+              bType: bType,
+              headerFn: header,  // existing header(doc, logo)
+              page: 1
             });
           });
         });
-
       },
-
       createFirstPageInfo: function (doc, jsonData, logo, reportName, xPoint, yPoint, xPointH, yPointH, xPointCol1, yPointCol1, xPointCol2, yPointCol2) {
 
         let imageWidth = 230;
@@ -2451,7 +2559,7 @@ sap.ui.define([],
 
         doc.y = yPointH + 8;
         doc
-          .fillColor("black")
+          .fillColor("#121E28")
           .font("Helvetica")
           .fontSize(12)
           .text("Notification: " + (jsonData.project_details.notification_number || ""), xPointCol1, yPointCol1, {
@@ -2479,7 +2587,7 @@ sap.ui.define([],
             characterSpacing: -0.2,
             wordSpacing: -0.4
           })
-          .fillColor("black")
+          .fillColor("#121E28")
           .font("Helvetica")
           .fontSize(11)
           .text(jsonData.project_details.customer.name || "", xPointCol1, yPointCol1 = (yPointH + 40), {
@@ -2515,7 +2623,7 @@ sap.ui.define([],
             characterSpacing: -0.2,
             wordSpacing: -0.4
           })
-          .fillColor("black")
+          .fillColor("#121E28")
           .font("Helvetica")
           .fontSize(11)
           .text(jsonData.project_details.service_manager.name || "", xPointCol2 = (xPointH + 292), yPointCol2 = (yPointH + 40), {
@@ -2551,7 +2659,7 @@ sap.ui.define([],
             characterSpacing: -0.2,
             wordSpacing: -0.4
           })
-          .fillColor("black")
+          .fillColor("#121E28")
           .font("Helvetica")
           .fontSize(11)
           .text(jsonData.project_details.location.name || "", xPointCol1, yPointCol1 = (yPointH + 40), {
@@ -2588,7 +2696,7 @@ sap.ui.define([],
             characterSpacing: -0.2,
             wordSpacing: -0.4
           })
-          .fillColor("black")
+          .fillColor("#121E28")
           .font("Helvetica")
           .fontSize(11)
           .text(jsonData.project_details.sales_rep.name || "", xPointCol2 = (xPointH + 292), yPointCol2 = (yPointH + 40), {
@@ -2641,7 +2749,7 @@ sap.ui.define([],
             characterSpacing: -0.2,
             wordSpacing: -0.4
           })
-          .fillColor("black");
+          .fillColor("#121E28");
         var siteContactTextH = doc.y;
         doc.font("Helvetica")
           .fontSize(12)
@@ -2689,7 +2797,7 @@ sap.ui.define([],
               wordSpacing: -0.4
             });
         }
-        doc.lineWidth(2)
+        doc.lineWidth(3)
           .moveTo(xPointH, yPointH += 195)
           .lineTo(xPointH + 230, yPointH)
           .stroke()
@@ -2707,7 +2815,6 @@ sap.ui.define([],
             wordSpacing: -0.4
           });
       },
-
       toDataURL: function (src, callback) {
         var image = new Image();
         image.crossOrigin = 'Anonymous';
