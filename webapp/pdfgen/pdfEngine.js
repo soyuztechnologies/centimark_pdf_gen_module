@@ -16,12 +16,66 @@ sap.ui.define([],
       maximumFractionDigits: 2
     };
 
+    //--------------------------------------------------------------
+    // 🧩 COMMON HELPER — Footer + Layout + Page Setup
+    //--------------------------------------------------------------
+    function applyFooterAndLayout(doc, {
+      margins = { top: 45, bottom: 1, left: 40, right: 40 },
+      reportName = '',
+      reportNameX = 230,
+      page = null,
+      footerLineStart = 40,
+      footerLineEnd = 45,
+      footerX = 40,
+      pageXOffset = 85,
+      font = 'Helvetica',
+      includeSpacing = true
+    } = {}) {
+
+      // Draw footer separator line
+      doc.lineWidth(1)
+        .moveTo(footerLineStart, doc.page.height - 28)
+        .lineTo(doc.page.width - footerLineEnd, doc.page.height - 28)
+        .stroke()
+        .fillColor("#00529B")
+        .font(font)
+        .fontSize(10);
+
+      // Common text spacing config
+      const textOptions = includeSpacing
+        ? { underline: false, characterSpacing: -0.2, wordSpacing: -0.4 }
+        : { underline: false };
+
+      // Footer left section
+      doc.text("CentiMark.com", footerX, doc.page.height - 24, {
+        ...textOptions,
+        link: "http://centimark.com/"
+      });
+
+      // Footer middle section
+      if (reportName) {
+        doc.text(reportName, reportNameX, doc.page.height - 24, textOptions);
+      }
+
+      // Footer right section (Page #)
+      if (page) {
+        doc.text(`Page ${page}`, doc.page.width - pageXOffset, doc.page.height - 24, textOptions);
+      }
+
+      // Reset default fill + cursor position
+      doc.fillColor("#121E28");
+      doc.x = margins.left + 5;
+      doc.y = margins.top;
+    }
+
+    //--------------------------------------------------------------
+    // 🧾 CREATE DOCUMENT
+    //--------------------------------------------------------------
     function niceDocument(logo, options = {}) {
       const {
-        paperSize = 'A4',
+        paperSize = 'LETTER',
         reportName = 'Untitled Report',
-        reportNameX = 192,
-        downloadName = 'Report',
+        reportNameX = 230,
         bType = 'window',
         headerFn = () => { },
         enableRoundedImage = false,
@@ -29,7 +83,6 @@ sap.ui.define([],
         resolve
       } = options;
 
-      // --- Initialize document ---
       const doc = new PDFDocument({
         size: paperSize,
         margins: { top: 45, bottom: 1, left: 40, right: 40 }
@@ -46,49 +99,22 @@ sap.ui.define([],
         };
       }
 
-      // --- Footer Section ---
-      doc.lineWidth(1)
-        .moveTo(40, doc.page.height - 28)
-        .lineTo(doc.page.width - 45, doc.page.height - 28)
-        .stroke()
-        .fillColor("#00529B")
-        .font('Helvetica')
-        .fontSize(10)
-        .text("CentiMark.com", 40, doc.page.height - 24, {
-          link: `http://centimark.com/`,
-          underline: false,
-          characterSpacing: -0.2,
-          wordSpacing: -0.4
-        })
-        .text(reportName, reportNameX, doc.page.height - 24, {
-          underline: false,
-          characterSpacing: -0.2,
-          wordSpacing: -0.4
-        });
-
-      if (page) {
-        doc.text(`Page ${page}`, doc.page.width - 75, doc.page.height - 24, {
-          characterSpacing: -0.2,
-          wordSpacing: -0.4
-        });
-      }
-
-      // --- Body setup ---
-      doc.fillColor("#121E28");
-      doc.x = 45;
-      doc.y = 45;
+      // 🟦 Apply footer + layout (shared)
+      applyFooterAndLayout(doc, {
+        reportName,
+        reportNameX,
+        page
+      });
 
       const stream = doc.pipe(blobStream());
 
-      // --- Header function call (custom) ---
-      if (typeof headerFn === "function") {
-        headerFn(doc, logo);
-      }
+      // Call header renderer if provided
+      if (typeof headerFn === "function") headerFn(doc, logo);
 
-      // --- Finalize PDF ---
+      // Finalize the PDF
       doc.end();
 
-      // --- Stream handling ---
+      // --- Stream output handler ---
       stream.on('finish', function () {
         const blob = stream.toBlob('application/pdf');
         const url = stream.toBlobURL('application/pdf');
@@ -98,78 +124,42 @@ sap.ui.define([],
           reader.readAsDataURL(blob);
           reader.onloadend = function () {
             const base64data = reader.result;
-            if (resolve) {
-              resolve(atob(base64data.split('base64,')[1]));
-            }
+            if (resolve) resolve(atob(base64data.split('base64,')[1]));
           };
         } else if (bType === 'blobURL') {
           if (resolve) resolve(url);
         } else {
           // Default open in new tab
           window.open(url, '_blank');
-          // Or download:
-          // const date = new Date();
-          // const downloadLink = document.createElement('a');
-          // downloadLink.href = url;
-          // downloadLink.download = `${downloadName}_${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}.pdf`;
-          // downloadLink.click();
-          // if (resolve) resolve("PDF Downloaded Successfully");
         }
       });
     }
 
+    //--------------------------------------------------------------
+    // ➕ ADD PAGE (uses same helper)
+    //--------------------------------------------------------------
     function addPageGeneric(doc, options = {}) {
       const {
-        paperSize = 'A4',
+        paperSize = 'LETTER',
         margins = { top: 45, bottom: 1, left: 40, right: 40 },
         reportName = '',
-        reportNameX = 200,
+        reportNameX = 230,
         page = null,
         checkSpace = null,
-        footerX = 40,
-        footerLineStart = 40,
-        footerLineEnd = 45,
-        pageXOffset = 85,
-        font = 'Helvetica',
-        includeSpacing = true
       } = options;
 
-      // Check if a new page is required
+      // Check available space
       if ((!checkSpace) || (doc.page.maxY() <= doc.y + checkSpace)) {
-
-        // Add a new page with consistent margins
         doc.addPage({ size: paperSize, margins });
 
-        // Draw footer line
-        doc.lineWidth(1)
-          .moveTo(footerLineStart, doc.page.height - 28)
-          .lineTo(doc.page.width - footerLineEnd, doc.page.height - 28)
-          .stroke()
-          .fillColor("#00529B")
-          .font(font)
-          .fontSize(10);
-
-        // Footer text: CentiMark and Report name
-        const textOptions = includeSpacing
-          ? { underline: false, characterSpacing: -0.2, wordSpacing: -0.4 }
-          : { underline: false };
-
-        doc.text("CentiMark.com", footerX, doc.page.height - 24, {
-          ...textOptions,
-          link: "http://centimark.com/"
+        // Apply shared footer and layout
+        applyFooterAndLayout(doc, {
+          reportName,
+          reportNameX,
+          page,
+          margins
         });
 
-        doc.text(reportName, reportNameX, doc.page.height - 24, textOptions);
-
-        // Page number text
-        if (page) {
-          doc.text(`Page ${page}`, doc.page.width - pageXOffset, doc.page.height - 24, textOptions);
-        }
-
-        // Reset text position for next content
-        doc.fillColor("#121E28");
-        doc.x = margins.left + 5;
-        doc.y = margins.top;
         return true;
       }
 
@@ -505,7 +495,7 @@ sap.ui.define([],
                     .lineTo((doc.page.width * 1 / 5) + 40, rectY)
                     .fillAndStroke(`${inspection_matrix.rating === "RN" ? "#C4222F" : "#5AA755"}`, `${inspection_matrix.rating === "RN" ? "#C4222F" : "#5AA755"}`)
                     .lineWidth(1)
-                    .fillAndStroke("black", "black")
+                    .fillAndStroke("#121E28", "#121E28")
                     .fillColor("white")
                     .font("Helvetica-Bold")
                     .text(`${inspection_matrix.rating === "RN" ? "X" : "+"}`, rectX, rectY, {
@@ -794,7 +784,7 @@ sap.ui.define([],
                         .lineTo((doc.page.width * 1 / 5) + 40, rectY)
                         .fillAndStroke(`${maintenance_activity_matrix.rating === "RN" ? "#C4222F" : "#5AA755"}`, `${maintenance_activity_matrix.rating === "RN" ? "#C4222F" : "#5AA755"}`)
                         .lineWidth(1)
-                        .fillAndStroke("black", "black")
+                        .fillAndStroke("#121E28", "#121E28")
                         .fillColor("white")
                         .font("Helvetica-Bold")
                         .text(`${maintenance_activity_matrix.rating === "RN" ? "X" : "+"}`, rectX, rectY, {
@@ -915,7 +905,7 @@ sap.ui.define([],
                         .lineTo((doc.page.width * 1 / 5) + 40, rectY)
                         .fillAndStroke(`${inspection_matrix.rating === "RN" ? "#C4222F" : "#5AA755"}`, `${inspection_matrix.rating === "RN" ? "#C4222F" : "#5AA755"}`)
                         .lineWidth(1)
-                        .fillAndStroke("black", "black")
+                        .fillAndStroke("#121E28", "#121E28")
                         .fillColor('white')
                         .font("Helvetica-Bold")
                         .text(`${inspection_matrix.rating === "RN" ? "X" : "+"}`, rectX, rectY, {
@@ -1418,7 +1408,7 @@ sap.ui.define([],
                 // Function to draw aligned table row
                 const drawTableRow = (label, activity, selection) => {
                   doc.lineJoin("round")
-                    .lineWidth(2)
+                    .lineWidth(3)
                     .strokeColor("#00529B")
                     .rect(tableX, rectY - 5, tableWidth, rowHeight)
                     .stroke();
@@ -1460,7 +1450,7 @@ sap.ui.define([],
                   drawTableRow(`Recommended Work: ${i + 1}`, rw.activity || "", rw.selection || "");
                 });
 
-                rectY += 10; // spacing after section
+                rectY -= 10; // spacing after section
               });
 
               rectY += 10; // spacing after building
@@ -1848,13 +1838,13 @@ sap.ui.define([],
                   //--------------------------------------------------------------
                   const sectionTopY = rectY - 10;
                   const leftColX = xPointH;
-                  const rightColX = xPointH + 290;
+                  const rightColX = xPointH + 270;
 
                   // 🟧 Overview Header
                   doc.lineJoin("round")
                     .lineWidth(3)
                     .strokeColor("#F4A20B")
-                    .rect(leftColX, sectionTopY, 282, 25)
+                    .rect(leftColX, sectionTopY, 252, 25)
                     .stroke();
 
                   doc.fontSize(12)
@@ -1869,8 +1859,8 @@ sap.ui.define([],
                   if (defect.repair_overview_photo) {
                     const imgX = leftColX;
                     const imgY = sectionTopY + 35;
-                    const imgW = 282;
-                    const imgH = 212;
+                    const imgW = 252;
+                    const imgH = 172;
                     const radius = 4;
 
                     doc.save();
@@ -1896,7 +1886,7 @@ sap.ui.define([],
                   doc.lineJoin("round")
                     .lineWidth(3)
                     .strokeColor("#F4A20B")
-                    .rect(rightColX, sectionTopY, doc.page.width - 380, 25)
+                    .rect(rightColX, sectionTopY, doc.page.width - 360, 25)
                     .stroke();
 
                   doc.fontSize(12)
@@ -1923,7 +1913,7 @@ sap.ui.define([],
                   doc.lineJoin("round")
                     .lineWidth(3)
                     .strokeColor("#F4A20B")
-                    .rect(rightColX, commentY, doc.page.width - 380, 25)
+                    .rect(rightColX, commentY, doc.page.width - 360, 25)
                     .stroke();
 
                   doc.fontSize(12)
@@ -1954,7 +1944,7 @@ sap.ui.define([],
                   doc.lineJoin("round")
                     .lineWidth(3)
                     .strokeColor("#F4A20B")
-                    .rect(leftColX, photoRowY, 282, 25)
+                    .rect(leftColX, photoRowY, 252, 25)
                     .stroke();
 
                   doc.font("Helvetica-Bold")
@@ -1968,8 +1958,8 @@ sap.ui.define([],
                   // 🖼️ Defect Image
                   if (defect.defect_photo) {
                     const dImgY = photoRowY + 35;
-                    const imgW = 282;
-                    const imgH = 212;
+                    const imgW = 252;
+                    const imgH = 172;
                     const radius = 4;
 
                     doc.save();
@@ -1995,7 +1985,7 @@ sap.ui.define([],
                   doc.lineJoin("round")
                     .lineWidth(3)
                     .strokeColor("#F4A20B")
-                    .rect(rightColX, photoRowY, doc.page.width - 380, 25)
+                    .rect(rightColX, photoRowY, doc.page.width - 360, 25)
                     .stroke();
 
                   doc.font("Helvetica-Bold")
@@ -2010,8 +2000,8 @@ sap.ui.define([],
                   // 🖼️ Repair Image
                   if (defect.repair_photo) {
                     const rImgY = photoRowY + 35;
-                    const imgW = 282;
-                    const imgH = 212;
+                    const imgW = 252;
+                    const imgH = 172;
                     const radius = 4;
 
                     doc.save();
@@ -2121,7 +2111,7 @@ sap.ui.define([],
                   // Comment text
                   doc.font("Helvetica")
                     .fontSize(10)
-                    .fillColor("black")
+                    .fillColor("#121E28")
                     .text(work.comments || "No comments provided.", headerX, rectY + 20, {
                       width: headerWidth,
                       align: "left",
@@ -2180,7 +2170,7 @@ sap.ui.define([],
                     }
 
                     // Caption
-                    doc.fillColor("black")
+                    doc.fillColor("#121E28")
                       .font("Helvetica")
                       .fontSize(9)
                       .text(photo.comment || "This is a sample photo comment.", imgX, imgY + imgH + 6, {
@@ -2208,30 +2198,39 @@ sap.ui.define([],
             //--------------------------------------------------------------
             if (jsonData.labor_materials_summary) {
               addPage(doc, page += 1);
-              let xPointH = 45;
+              let rectX = 45;
               let rectY = 45;
               const fullWidth = doc.page.width - 90;
 
               // 📘 Header
               doc.lineJoin("round")
-                .lineWidth(2)
+                .lineWidth(3)
                 .strokeColor("#00529B")
                 .rect(xPointH, rectY - 15, fullWidth, 30)
                 .stroke()
                 .font("Helvetica-Bold")
                 .fontSize(18)
                 .fillColor("#00529B")
-                .text("Labor and Materials", xPointH + 10, rectY - 10, { align: "left" });
+                .text("Labor and Materials", rectX, rectY - 6, {
+                  align: "left", characterSpacing: -0.2,
+                  wordSpacing: -0.4
+                });
 
-              rectY += 35;
+              rectY += 25;
 
               //--------------------------------------------------------------
               // 🟦 Labor and Fees Header
               //--------------------------------------------------------------
-              doc.rect(xPointH, rectY, fullWidth, 25)
-                .fill("#00529B");
+              doc.lineJoin("round")
+                .lineWidth(3)
+                .strokeColor("#00529B")
+                .rect(xPointH, rectY - 6, fullWidth, 25)
+                .fillAndStroke("#00529B", "#00529B");
               doc.font("Helvetica-Bold").fontSize(13).fillColor("white")
-                .text("Labor and Fees", xPointH + 10, rectY + 6);
+                .text("Labor and Fees", rectX, rectY + 3, {
+                  characterSpacing: -0.2,
+                  wordSpacing: -0.4
+                });
 
               rectY += 25;
 
@@ -2240,10 +2239,11 @@ sap.ui.define([],
               const tableX = xPointH;
               const rowHeight = 22;
 
-              doc.rect(tableX, rectY, fullWidth, rowHeight)
-                .fill("#F4A20B")
-                .strokeColor("white")
-                .stroke();
+              doc.lineJoin("round")
+                .lineWidth(3)
+                .strokeColor("#F4A20B")
+                .rect(tableX, rectY - 2, fullWidth, rowHeight)
+                .fillAndStroke("#F4A20B", "#F4A20B")
 
               const headers = ["Type", "Hrs/Qty", "Rate", "Total"];
               let headerX = tableX;
@@ -2253,7 +2253,9 @@ sap.ui.define([],
                   .fontSize(11)
                   .text(text, headerX + 5, rectY + 6, {
                     width: colWidths[i] - 10,
-                    align: i === 0 ? "left" : "right"
+                    align: i === 0 ? "left" : "right",
+                    characterSpacing: -0.2,
+                    wordSpacing: -0.4
                   });
                 headerX += colWidths[i];
               });
@@ -2263,59 +2265,134 @@ sap.ui.define([],
               //--------------------------------------------------------------
               // 🧾 Labor Rows
               //--------------------------------------------------------------
+              const borderColor = "#00529B";
+              const textColor = "#121E28";
+
               (jsonData.labor_materials_summary.labor_and_fees || []).forEach((row, i) => {
-                doc.lineWidth(1).strokeColor("black");
                 let colX = tableX;
-                doc.rect(tableX, rectY, fullWidth, rowHeight).stroke();
 
-                doc.font("Helvetica").fontSize(10).fillColor("#121E28");
-                doc.text(row.type || "", colX + 5, rectY + 6, { width: colWidths[0] - 10 });
+                // Row background (white) + blue border
+                doc.lineJoin("round")
+                  .lineWidth(3)
+                  .strokeColor(borderColor)
+                  .rect(colX, rectY + 2, fullWidth, rowHeight)
+                  .stroke();
+
+                // Draw vertical column borders
+                let dividerX = tableX;
+                for (let j = 0; j < colWidths.length - 1; j++) {
+                  dividerX += colWidths[j];
+                  doc
+                    .lineJoin("round")
+                    .lineWidth(3)
+                    .strokeColor(borderColor)
+                    .rect(dividerX, rectY + 2, 0.5, rowHeight)
+                    .stroke();
+                }
+
+                // Text styling
+                doc.font("Helvetica")
+                  .fontSize(10)
+                  .fillColor(textColor);
+
+                // Vertical centering (Y offset)
+                const textY = rectY + (rowHeight - doc.currentLineHeight()) / 2 + 2;
+
+                // Column 1 — Type
+                doc.text(row.type || "", colX + 5, textY, {
+                  width: colWidths[0] - 10,
+                  align: "left",
+                  characterSpacing: -0.2,
+                  wordSpacing: -0.4
+                });
+
+                // Column 2 — Qty
                 colX += colWidths[0];
-                doc.text(row.qty || "", colX, rectY + 6, { width: colWidths[1] - 5, align: "right" });
-                colX += colWidths[1];
-                doc.text(row.rate || "", colX, rectY + 6, { width: colWidths[2] - 5, align: "right" });
-                colX += colWidths[2];
-                doc.text(row.total || "", colX, rectY + 6, { width: colWidths[3] - 5, align: "right" });
+                doc.text(row.qty || "", colX, textY, {
+                  width: colWidths[1] - 5,
+                  align: "right",
+                  characterSpacing: -0.2,
+                  wordSpacing: -0.4
+                });
 
-                rectY += rowHeight;
+                // Column 3 — Rate
+                colX += colWidths[1];
+                doc.text(row.rate || "", colX, textY, {
+                  width: colWidths[2] - 5,
+                  align: "right",
+                  characterSpacing: -0.2,
+                  wordSpacing: -0.4
+                });
+
+                // Column 4 — Total
+                colX += colWidths[2];
+                doc.text(row.total || "", colX, textY, {
+                  width: colWidths[3] - 5,
+                  align: "right",
+                  characterSpacing: -0.2,
+                  wordSpacing: -0.4
+                });
+
+                rectY += rowHeight; // Move to next row
               });
+
 
               //--------------------------------------------------------------
               // 🟧 Labor Total Row
               //--------------------------------------------------------------
-              doc.rect(xPointH, rectY, fullWidth, 22).fill("#F4A20B");
+              doc.lineJoin("round")
+                .lineWidth(3)
+                .strokeColor("#F4A20B")
+                .rect(xPointH, rectY + 6, fullWidth, 22).fillAndStroke("#F4A20B", "#F4A20B");
               doc.font("Helvetica-Bold").fontSize(11).fillColor("white")
-                .text("Labor and Fees Total:", xPointH + 10, rectY + 5);
+                .text("Labor and Fees Total:", rectX, rectY + 12, {
+                  characterSpacing: -0.2,
+                  wordSpacing: -0.4
+                });
               doc.text(
                 `${parseFloat(jsonData.labor_materials_summary.labor_and_fees_total || 0).toLocaleString('en-US', currencyOptions)}`,
-                xPointH + fullWidth - 100,
-                rectY + 5,
-                { width: 90, align: "right" }
+                xPointH + fullWidth - 95,
+                rectY + 12,
+                {
+                  width: 90, align: "right", characterSpacing: -0.2,
+                  wordSpacing: -0.4
+                }
               );
 
-              rectY += 30;
+              rectY += 43;
 
               //--------------------------------------------------------------
               // 🟦 Materials Header
               //--------------------------------------------------------------
-              doc.rect(xPointH, rectY, fullWidth, 25)
-                .fill("#00529B");
+              doc.lineJoin("round")
+                .lineWidth(3)
+                .strokeColor("#00529B")
+                .rect(xPointH, rectY, fullWidth, 25)
+                .fillAndStroke("#00529B", "#00529B");
               doc.font("Helvetica-Bold").fontSize(13).fillColor("white")
-                .text("Materials", xPointH + 10, rectY + 6);
+                .text("Materials", rectX, rectY + 7, {
+                  characterSpacing: -0.2,
+                  wordSpacing: -0.4
+                });
 
               rectY += 25;
 
               // 🟧 Material Column Headers
               const matHeaders = ["Description", "Qty", "Unit Price", "Total"];
-              doc.rect(tableX, rectY, fullWidth, rowHeight).fill("#F4A20B").stroke();
+              doc.lineJoin("round")
+                .lineWidth(3)
+                .strokeColor("#F4A20B")
+                .rect(tableX, rectY + 4, fullWidth, rowHeight).fillAndStroke("#F4A20B", "#F4A20B");
               let matX = tableX;
               matHeaders.forEach((text, i) => {
                 doc.fillColor("white")
                   .font("Helvetica-Bold")
                   .fontSize(11)
-                  .text(text, matX + 5, rectY + 6, {
+                  .text(text, matX + 5, rectY + 10, {
                     width: colWidths[i] - 10,
-                    align: i === 0 ? "left" : "right"
+                    align: i === 0 ? "left" : "right",
+                    characterSpacing: -0.2,
+                    wordSpacing: -0.4
                   });
                 matX += colWidths[i];
               });
@@ -2326,185 +2403,329 @@ sap.ui.define([],
               // 📋 Material Rows
               //--------------------------------------------------------------
               (jsonData.labor_materials_summary.materials || []).forEach((row, i) => {
-                doc.lineWidth(1).strokeColor("black");
                 let colX = tableX;
-                doc.rect(tableX, rectY, fullWidth, rowHeight).stroke();
 
-                doc.font("Helvetica").fontSize(10).fillColor("#121E28");
-                doc.text(row.material_description || "", colX + 5, rectY + 6, { width: colWidths[0] - 10 });
+                // Row border box
+                doc.lineJoin("round")
+                  .lineWidth(3)
+                  .strokeColor(borderColor)
+                  .rect(colX, rectY + 8, fullWidth, rowHeight)
+                  .stroke();
+
+                // Draw internal vertical dividers
+                let dividerX = tableX;
+                for (let j = 0; j < colWidths.length - 1; j++) {
+                  dividerX += colWidths[j];
+                  doc.lineJoin("round")
+                    .lineWidth(3)
+                    .strokeColor(borderColor)
+                    .rect(dividerX, rectY + 8, 0.5, rowHeight)
+                    .stroke();
+                }
+
+                // Text setup
+                doc.font("Helvetica")
+                  .fontSize(10)
+                  .fillColor(textColor);
+
+                // Center text vertically
+                const textY = rectY + (rowHeight - doc.currentLineHeight()) / 2 + 7;
+
+                // Column 1 — Description
+                doc.text(row.material_description || "", colX + 5, textY, {
+                  width: colWidths[0] - 10,
+                  align: "left",
+                  characterSpacing: -0.2,
+                  wordSpacing: -0.4
+                });
+
+                // Column 2 — Qty
                 colX += colWidths[0];
-                doc.text(row.qty || "", colX, rectY + 6, { width: colWidths[1] - 5, align: "right" });
-                colX += colWidths[1];
-                doc.text(row.unit_price || "", colX, rectY + 6, { width: colWidths[2] - 5, align: "right" });
-                colX += colWidths[2];
-                doc.text(row.total || "", colX, rectY + 6, { width: colWidths[3] - 5, align: "right" });
+                doc.text(row.qty || "", colX, textY, {
+                  width: colWidths[1] - 5,
+                  align: "right",
+                  characterSpacing: -0.2,
+                  wordSpacing: -0.4
+                });
 
-                rectY += rowHeight;
+                // Column 3 — Unit Price
+                colX += colWidths[1];
+                doc.text(row.unit_price || "", colX, textY, {
+                  width: colWidths[2] - 5,
+                  align: "right",
+                  characterSpacing: -0.2,
+                  wordSpacing: -0.4
+                });
+
+                // Column 4 — Total
+                colX += colWidths[2];
+                doc.text(row.total || "", colX, textY, {
+                  width: colWidths[3] - 5,
+                  align: "right",
+                  characterSpacing: -0.2,
+                  wordSpacing: -0.4
+                });
+
+                rectY += rowHeight; // Move to next row
               });
+
 
               //--------------------------------------------------------------
               // 🟧 Materials Total Row
               //--------------------------------------------------------------
-              doc.rect(xPointH, rectY, fullWidth, 22).fill("#F4A20B");
+              doc.lineJoin("round")
+                .lineWidth(3)
+                .strokeColor("#F4A20B")
+                .rect(xPointH, rectY + 12, fullWidth, 22).fillAndStroke("#F4A20B", "#F4A20B");
               doc.font("Helvetica-Bold").fontSize(11).fillColor("white")
-                .text("Materials Total:", xPointH + 10, rectY + 5);
+                .text("Materials Total:", rectX, rectY + 18);
               doc.text(
                 `${parseFloat(jsonData.labor_materials_summary.material_total || 0).toLocaleString('en-US', currencyOptions)}`,
-                xPointH + fullWidth - 100,
-                rectY + 5,
-                { width: 90, align: "right" }
+                xPointH + fullWidth - 95,
+                rectY + 18,
+                {
+                  width: 90, align: "right", characterSpacing: -0.2,
+                  wordSpacing: -0.4
+                }
               );
 
-              rectY += 25;
+              rectY += 38;
 
               //--------------------------------------------------------------
               // 🔵 Totals Section
               //--------------------------------------------------------------
               const totalsHeight = 70;
-              doc.rect(xPointH, rectY, fullWidth, totalsHeight).fill("#00529B");
+              doc.lineJoin("round")
+                .lineWidth(3)
+                .strokeColor("#00529B")
+                .rect(xPointH, rectY, fullWidth, totalsHeight).fillAndStroke("#00529B", "#00529B");
 
               doc.fillColor("white").font("Helvetica").fontSize(11);
-              doc.text("Subtotal:", xPointH + fullWidth - 200, rectY + 10, { align: "left" });
+              doc.text("Subtotal:", xPointH + fullWidth - 250, rectY + 11, { align: "left" });
               doc.text(
                 `${parseFloat(jsonData.labor_materials_summary.subtotal || 0).toLocaleString('en-US', currencyOptions)}`,
-                xPointH + fullWidth - 100,
-                rectY + 10,
-                { align: "right" }
+                xPointH + fullWidth - 95,
+                rectY + 11,
+                {
+                  width: 90, align: "right", characterSpacing: -0.2,
+                  wordSpacing: -0.4
+                }
               );
 
               doc.text(
                 `Tax Amount (Rate ${parseFloat(jsonData.labor_materials_summary.taxes?.tax_rate || 0).toFixed(2)}%):`,
-                xPointH + fullWidth - 200,
-                rectY + 25,
-                { align: "left" }
+                xPointH + fullWidth - 250,
+                rectY + 26,
+                {
+                  align: "left", characterSpacing: -0.2,
+                  wordSpacing: -0.4
+                }
               );
               doc.text(
                 `${parseFloat(jsonData.labor_materials_summary.taxes?.total || 0).toLocaleString('en-US', currencyOptions)}`,
-                xPointH + fullWidth - 100,
-                rectY + 25,
-                { align: "right" }
+                xPointH + fullWidth - 95,
+                rectY + 26,
+                {
+                  width: 90, align: "right", characterSpacing: -0.2,
+                  wordSpacing: -0.4
+                }
               );
 
               // Divider line
               doc.lineWidth(1).strokeColor("white")
-                .moveTo(xPointH + fullWidth - 220, rectY + 42)
-                .lineTo(xPointH + fullWidth - 40, rectY + 42)
+                .moveTo(xPointH + fullWidth - 250, rectY + 43)
+                .lineTo(xPointH + fullWidth - 5, rectY + 43)
                 .stroke();
 
               doc.font("Helvetica-Bold").fontSize(12);
-              doc.text("Grand Total:", xPointH + fullWidth - 200, rectY + 50, { align: "left" });
+              doc.text("Grand Total:", xPointH + fullWidth - 250, rectY + 51, { align: "left" });
               doc.text(
                 `${parseFloat(jsonData.labor_materials_summary.grand_total || 0).toLocaleString('en-US', currencyOptions)}`,
-                xPointH + fullWidth - 100,
-                rectY + 50,
-                { align: "right" }
+                xPointH + fullWidth - 95,
+                rectY + 51,
+                {
+                  width: 90, align: "right", characterSpacing: -0.2,
+                  wordSpacing: -0.4
+                }
               );
             }
-
-
-            if (jsonData.status_log) {
-              // Status Section  
+            if (jsonData.status_log && jsonData.status_log.length) {
+              // ➤ Add new page for Status Log Table
               addPage(doc, page += 1, null);
-              rectX = 45;
-              rectY = 45;
-              doc.rect(rectX, (rectY += 27) - 25, doc.page.width - 90, 25)
-                .fill('#00529B')
-                .fillColor("white")
-                .fontSize(14)
-                .font("Helvetica-Bold")
-                .text(`Status Log from Tablet for Notification: ${jsonData.project_details.notification_number}`, rectX + 80, rectY - 17, {
-                  characterSpacing: -0.2,
-                  wordSpacing: -0.4
-                })
-                .fillColor("#121E28")
-                .font('Helvetica')
-                .fontSize(10);
-              let maxY = doc.y;
-              doc.lineWidth(1)
-                .moveTo(rectX, doc.y)
-                .lineTo(doc.page.width - 45, doc.y)
+
+              const borderColor = "#00529B";
+              const textColor = "#121E28";
+
+              // Left offsets
+              let rectX = 45;     // for text
+              let rectY = 45;
+
+              const fullWidth = doc.page.width - 90;
+
+              //-------------------------------------------------------
+              // 🟦 MAIN HEADING (Transparent, Blue Border)
+              //-------------------------------------------------------
+              const headingHeight = 30;
+              doc.lineJoin("round")
+                .lineWidth(3)
+                .strokeColor(borderColor)
+                .rect(xPointH, rectY, fullWidth, headingHeight)
                 .stroke();
-              jsonData.status_log = jsonData.status_log ? [{
-                foreman_name: "Foreman Name",
-                date: "Date",
-                time: 'Time (EST)',
-                status: "Status",
-                elapsed_time: "Elapsed Time (Hrs)"
-              }].concat(jsonData.status_log) : [];
-              (jsonData.status_log || []).forEach((status_log, dIndex) => {
-                if (addPage(doc, page += 1, 75)) {
-                  rectY = doc.y;
-                  maxY = doc.y;
-                  rectX = doc.x;
-                  doc.lineWidth(1)
-                    .moveTo(rectX, doc.y)
-                    .lineTo(doc.page.width - 45, doc.y)
+
+              doc.font("Helvetica-Bold")
+                .fontSize(16)
+                .fillColor(borderColor)
+                .text(
+                  `Status Log from Tablet for Notification: ${jsonData.project_details.notification_number}`,
+                  rectX,
+                  rectY + 9,
+                  {
+                    width: fullWidth - 20,
+                    align: "left",
+                    characterSpacing: -0.2,
+                    wordSpacing: -0.4
+                  }
+                );
+
+              rectY += headingHeight + 5;
+
+              //-------------------------------------------------------
+              // TABLE CONFIGURATION
+              //-------------------------------------------------------
+              const columns = [
+                { title: "Foreman", width: fullWidth * 0.25, align: "left", prop: "foreman_name" },
+                { title: "Date", width: fullWidth * 0.18, align: "center", prop: "date" },
+                { title: "Time (EST)", width: fullWidth * 0.15, align: "center", prop: "time" },
+                { title: "Status", width: fullWidth * 0.25, align: "center", prop: "status" },
+                { title: "Elapsed Time (Hrs)", width: fullWidth * 0.17, align: "center", prop: "elapsed_time" }
+              ];
+
+              //-------------------------------------------------------
+              // 🟦 TABLE HEADER — Auto height based on content
+              //-------------------------------------------------------
+
+              // Find tallest header cell height dynamically
+              let headerHeight = 0;
+              for (const col of columns) {
+                const h = doc.heightOfString(col.title, { width: col.width - 10 });
+                if (h > headerHeight) headerHeight = h;
+              }
+
+              // Draw header background and text
+              let colX = xPointH;
+              let colTextX = rectX;
+              for (const col of columns) {
+                doc.lineJoin("round")
+                  .lineWidth(3)
+                  .strokeColor(borderColor)
+                  .rect(colX, rectY, col.width, headerHeight)
+                  .fillAndStroke(borderColor, borderColor);
+
+                doc.fillColor("white").font("Helvetica-Bold").fontSize(11)
+                  .text(col.title, colTextX, rectY + (headerHeight - doc.heightOfString(col.title, { width: col.width - 10 })) / 2, {
+                    width: col.width - 10,
+                    align: col.align,
+                    characterSpacing: -0.2,
+                    wordSpacing: -0.4
+                  });
+                colX += col.width;
+                colTextX += col.width;
+              }
+
+              rectY += headerHeight;
+
+              //-------------------------------------------------------
+              // 🧾 FUNCTION: DRAW ROW WITH DYNAMIC HEIGHT
+              //-------------------------------------------------------
+              const drawRow = (row) => {
+                let colX = xPointH;
+                doc.font("Helvetica").fontSize(10).fillColor(textColor);
+
+                // Calculate dynamic row height based on tallest text
+                let maxHeight = 0;
+                for (const col of columns) {
+                  const cellText = row[col.prop] || "";
+                  const h = doc.heightOfString(cellText, { width: col.width - 10 });
+                  if (h + 10 > maxHeight) maxHeight = h + 10;
+                }
+
+                // Page break handling
+                if (rectY + maxHeight + 40 > doc.page.height - 45) {
+                  addPage(doc, page += 1, null);
+                  rectY = 45;
+
+                  // Redraw header
+                  let hX = rectX;
+                  for (const col of columns) {
+                    doc.lineJoin("round")
+                      .lineWidth(3)
+                      .strokeColor(borderColor)
+                      .rect(hX, rectY, col.width, headerHeight)
+                      .fillAndStroke(borderColor, borderColor);
+                    doc.fillColor("white")
+                      .font("Helvetica-Bold")
+                      .fontSize(11)
+                      .text(col.title, hX, rectY + (headerHeight - doc.heightOfString(col.title, { width: col.width - 10 })) / 2, {
+                        width: col.width - 10,
+                        align: col.align,
+                        characterSpacing: -0.2,
+                        wordSpacing: -0.4
+                      });
+                    hX += col.width;
+                  }
+                  rectY += headerHeight;
+                }
+
+                // Draw row border (starting from xPointH)
+                doc.lineJoin("round")
+                  .lineWidth(3)
+                  .strokeColor(borderColor)
+                  .rect(xPointH, rectY, fullWidth, maxHeight)
+                  .stroke();
+
+                // Draw cell dividers and text
+                colX = xPointH;
+                for (let c = 0; c < columns.length; c++) {
+                  const col = columns[c];
+                  const cellText = row[col.prop] || "";
+
+                  doc.text(cellText, (c === 0 ? rectX : colX), rectY + 6, {
+                    width: col.width - 10,
+                    align: col.align,
+                    characterSpacing: -0.2,
+                    wordSpacing: -0.4
+                  });
+
+                  // Cell vertical boundary
+                  doc.lineJoin("round")
+                    .lineWidth(3)
+                    .strokeColor(borderColor)
+                    .rect(colX, rectY, col.width, maxHeight)
                     .stroke();
-                } else {
-                  page -= 1;
+
+                  colX += col.width;
                 }
-                if (dIndex === 0) {
-                  doc.font("Helvetica-Bold");
-                } else {
-                  doc.font("Helvetica");
-                }
-                rectY = doc.y + 12;
-                doc.text(`${status_log.foreman_name || ''}`, rectX + 5, rectY, {
-                  width: 90,
-                  align: 'left',
-                  characterSpacing: -0.2,
-                  wordSpacing: -0.4
-                });
-                maxY = maxY < doc.y ? doc.y : maxY;
-                doc.text(`${status_log.date || ''}`, rectX + 110, rectY, {
-                  width: 80,
-                  align: 'center',
-                  characterSpacing: -0.2,
-                  wordSpacing: -0.4
-                });
-                maxY = maxY < doc.y ? doc.y : maxY;
-                doc.text(`${status_log.time || ''}`, rectX + 205, rectY, {
-                  width: 80,
-                  align: 'right',
-                  characterSpacing: -0.2,
-                  wordSpacing: -0.4
-                });
-                maxY = maxY < doc.y ? doc.y : maxY;
-                doc.text(`${status_log.status || ''}`, rectX + 305, rectY, {
-                  width: 100,
-                  align: 'left',
-                  characterSpacing: -0.2,
-                  wordSpacing: -0.4
-                });
-                maxY = maxY < doc.y ? doc.y : maxY;
-                doc.text(`${status_log.elapsed_time || ''}`, rectX + 400, rectY, {
-                  width: 100,
-                  align: 'right',
-                  characterSpacing: -0.2,
-                  wordSpacing: -0.4
-                });
-                doc.y = maxY < doc.y ? doc.y : maxY;
-                doc.lineWidth(1)
-                  .moveTo(rectX, rectY - 12)
-                  .lineTo(rectX, doc.y)
-                  .moveTo(rectX + 110, rectY - 12)
-                  .lineTo(rectX + 110, doc.y)
-                  .moveTo(rectX + 200, rectY - 12)
-                  .lineTo(rectX + 200, doc.y)
-                  .moveTo(rectX + 300, rectY - 12)
-                  .lineTo(rectX + 300, doc.y)
-                  .moveTo(rectX + 400, rectY - 12)
-                  .lineTo(rectX + 400, doc.y)
-                  .moveTo(rectX + doc.page.width - 90, rectY - 12)
-                  .lineTo(rectX + doc.page.width - 90, doc.y)
-                  .stroke();
-                doc.lineWidth(1)
-                  .moveTo(rectX, doc.y)
-                  .lineTo(rectX + doc.page.width - 90, doc.y)
-                  .stroke();
+
+                rectY += maxHeight;
+              };
+
+              //-------------------------------------------------------
+              // ADD ALL ROWS
+              //-------------------------------------------------------
+              jsonData.status_log.forEach((row) => {
+                drawRow(row);
               });
-              rectY = doc.y;
+
+              //-------------------------------------------------------
+              // Final bottom border
+              //-------------------------------------------------------
+              doc.lineJoin("round")
+                .lineWidth(3)
+                .strokeColor(borderColor)
+                .rect(xPointH, rectY, fullWidth, 0.5)
+                .stroke();
             }
+
           }
           const addPage = (doc, page = null, checkSpace = null) => {
             return addPageGeneric(doc, {
@@ -2523,7 +2744,7 @@ sap.ui.define([],
           that.toDataURL("pdfgen/CMLogotaglineHigh.png", function (logo) {
             niceDocument(logo, {
               reportName: reportName,
-              reportNameX: 192,
+              reportNameX: 230,
               downloadName: 'ServiceRepairSummaryForSvcMgr',
               bType: bType,
               headerFn: header,  // existing header(doc, logo)
@@ -2824,7 +3045,9 @@ sap.ui.define([],
           canvas.height = this.naturalHeight;
           canvas.width = this.naturalWidth;
           context.drawImage(this, 0, 0);
-          var dataURL = canvas.toDataURL('image/png');
+
+          let sNewPath = `image/${src.split(".")[1] ? src.split(".")[1] : 'jpeg'}`;
+          var dataURL = canvas.toDataURL(sNewPath, 0.6);
           return callback(dataURL);
         };
         image.src = src;
