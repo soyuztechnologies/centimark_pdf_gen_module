@@ -17,7 +17,8 @@ sap.ui.define([
         const binary = await pdfEngine.pdfTM(constants.jsonDataTM, 'download');
       },
       onPDFGeneratePM: async function () {
-        const binary = await pdfEngine.pdfPM(constants.jsonDataPM, 'download');
+        // const binary = await pdfEngine.pdfPM(constants.jsonDataPM, 'download');
+        const binary = await pdfEngine.pdfPM(constants.newJsonDataPM, 'download');
       }
     });
   });

@@ -190,10 +190,6 @@ sap.ui.define([],
             that.createFirstPageInfo(doc, jsonData, logo, reportName, xPoint, yPoint, xPointH, yPointH, xPointCol1, yPointCol1, xPointCol2, yPointCol2);
 
             addPage(doc, page += 1);
-
-            const borderBlue = "#00529B";
-            const borderOrange = "#F4A20B";
-            const textDark = "#121E28";
             const fullWidth = doc.page.width - 90;
             //--------------------------------------------------------------
             // 📄 Report Summary Header
@@ -221,7 +217,7 @@ sap.ui.define([],
             //--------------------------------------------------------------
             // 🏗️ BUILDING SECTION SUMMARY 
             //--------------------------------------------------------------
-            (jsonData.building_section_summary || []).forEach((building, bIndex) => {
+            (jsonData.report_summary || []).forEach((building, bIndex) => {
 
               //--------------------------------------------------------------
               // Helper: Draw header bar (blue/orange)
@@ -293,23 +289,23 @@ sap.ui.define([],
               drawHeader("#00529B", building.building_name, rectY, "Building: ");
 
               rectY += 15;
-              drawSummaryRow("Building Inspections", `${building.building_inspection || "0"}`);
+              drawSummaryRow("Building Inspections", `${building.building_inspection_dfct_cnt || "0"} Defects`);
               rectY -= 5;
 
               //--------------------------------------------------------------
               // 🟧 SECTIONS SUMMARY
               //--------------------------------------------------------------
-              (building.sections_summary || []).forEach((section) => {
+              (building.sections || []).forEach((section) => {
                 rectY += 25;
                 drawHeader("#F4A20B", section.section_name, rectY, "Section: ");
                 rectY += 15;
 
-                drawSummaryRow("Section Inspections", `${section.section_inspection || "0"}`);
-                drawSummaryRow("Maintenance Activities", `${section.maintenance_activities || "0"}`);
+                drawSummaryRow("Section Inspections", `${section.section_inspection_dfct_cnt || "0"} Defects`);
+                drawSummaryRow("Maintenance Activities", `${section.maint_activities_dfct_cnt || "0"} Defects`);
 
                 // Include recommended work if available
-                if (section.recommended_work) {
-                  drawSummaryRow("Recommended Work", `${section.recommended_work || "0"}`);
+                if (section.recommended_work_cnt) {
+                  drawSummaryRow("Recommended Work", `${section.recommended_work_cnt || "0"} Defects`);
                 }
 
                 rectY -= 5;
@@ -328,7 +324,7 @@ sap.ui.define([],
             //--------------------------------------------------------------
             // 🏢 LOOP THROUGH EACH BUILDING ENTRY
             //--------------------------------------------------------------
-            jsonData.building_summary.forEach((building) => {
+            jsonData.buildings.forEach((building) => {
               // ────────────────────────────────────────────────────────────────
               // 🧩 Local helpers (non-global)
               // ────────────────────────────────────────────────────────────────
@@ -367,7 +363,7 @@ sap.ui.define([],
               // 🏠 BUILDING HEADER
               // ────────────────────────────────────────────────────────────────
               drawRect("#00529B", xPointH, (rectY += 27) - 25, doc.page.width - 90);
-              drawText(`Building: ${building.building_name}`, rectX, rectY - 17, {
+              drawText(`Building: ${building.name}`, rectX, rectY - 17, {
                 bold: true, size: 14, color: "#00529B", width: doc.page.width - 120
               });
 
@@ -397,10 +393,48 @@ sap.ui.define([],
               // ────────────────────────────────────────────────────────────────
               const photoHeaderY = doc.y + 10;
               drawRect("#F4A20B", xPointH, photoHeaderY, doc.page.width - 90);
-              drawText("Building Photo", rectX, photoHeaderY + 8, { bold: true, size: 14, color: "#F4A20B" });
-              if (building.building_photo) {
-                drawImage(building.building_photo, xPointH, photoHeaderY + 35, 282, 212, 8);
-                rectY = photoHeaderY + 35 + 212 + 15;
+              drawText("Building Photo(s)", rectX, photoHeaderY + 8, { bold: true, size: 14, color: "#F4A20B" });
+              if (building.photos?.length) {
+                const photoWidth = 257;
+                const photoHeight = 172;
+                const gap = 10;
+                const photosPerRow = 2;
+
+                let x = xPointH;
+                let y = photoHeaderY + 35;
+                let photoCount = 0;
+
+                building.photos.forEach((photo, index) => {
+                  // 🧾 Page break if image exceeds bottom margin
+                  if (y + photoHeight + 60 > doc.page.height - 45) {
+                    addPage(doc, page += 1);
+                    y = 45; // reset Y same as initial base
+                    x = xPointH;
+                  }
+
+                  // 🖼️ Draw the photo (use your helper)
+                  drawImage(
+                    photo.photo,
+                    x,
+                    y,
+                    photoWidth,
+                    photoHeight,
+                    8,
+                    photo.comment || "This is a sample photo comment."
+                  );
+
+                  photoCount++;
+                  if (photoCount % photosPerRow === 0) {
+                    // move to next row
+                    x = xPointH;
+                    y += photoHeight + 35;
+                  } else {
+                    // move to next column
+                    x += photoWidth + gap;
+                  }
+                });
+
+                rectY = y + photoHeight + 15; // keep rectY consistent
               }
 
               rectX = 45;  // Left margin for all boxes and text
@@ -413,6 +447,7 @@ sap.ui.define([],
               const BORDER_BLUE = "#00529B";
               const BORDER_GREEN = "#5AA755";
               const BORDER_RED = "#C4222F";
+              const BORDER_ORANGE = "#F4A20B";
               const TEXT_DARK = "#121E28";
 
               const drawRoundedRect = (x, y, width, height, radius = 4, color = BORDER_BLUE) => {
@@ -481,8 +516,8 @@ sap.ui.define([],
                     .fillAndStroke(ratingColor, ratingColor);
                   doc.font("Helvetica-Bold").fontSize(10).fillColor("white")
                     .text(symbol, tableX, y + 7, {
-                      width: colWidths[0], 
-                      align: "center", 
+                      width: colWidths[0],
+                      align: "center",
                       characterSpacing: -0.2,
                       wordSpacing: -0.4
                     });
@@ -490,13 +525,13 @@ sap.ui.define([],
                   // Text columns
                   doc.font("Helvetica").fillColor(TEXT_DARK);
                   doc.text(comp || "", tableX + colWidths[0] + 10, y + 7, {
-                    width: colWidths[1] - 20, 
+                    width: colWidths[1] - 20,
                     align: "left",
                     characterSpacing: -0.2,
                     wordSpacing: -0.4
                   });
                   doc.text(defect || "", tableX + colWidths[0] + colWidths[1] + 10, y + 7, {
-                    width: colWidths[2] - 20, 
+                    width: colWidths[2] - 20,
                     align: "left",
                     characterSpacing: -0.2,
                     wordSpacing: -0.4
@@ -580,559 +615,493 @@ sap.ui.define([],
                 rectY = legendY + 25;
               }
 
-              if (building.building_specifications) {
+              //--------------------------------------------------------------
+              // 🧱 Building Inspections
+              //--------------------------------------------------------------
+              if (building.inspections) {
                 addPage(doc, page += 1);
-                rectX = doc.x;
-                rectY = doc.y;
-                doc.rect(rectX, (rectY += 52) - 50, doc.page.width - 90, 50)
-                  .fill('#00529B')
-                  .fillColor("white")
-                  .fontSize(14)
-                  .font("Helvetica-Bold");
-                doc.y = rectY - 42;
-                doc.x = rectX;
-                doc.text(`Building Specifications For:`, {
-                  width: doc.page.width - 90,
-                  align: "center"
+                rectX = 45;
+                rectY = 45;
+
+                // 🔵 Header Rectangle
+                drawRect("#00529B", xPointH, rectY - 25, doc.page.width - 90, 35, 3, true);
+
+                // 🏷️ Header Text
+                drawText(`Building Inspections for ${building.name || ""}`, rectX, rectY - 15, {
+                  bold: true, size: 18, color: "#00529B", width: doc.page.width - 90
                 });
-                doc.y = rectY - 20;
-                doc.text(`${building.building_name || ""}`, {
-                  width: doc.page.width - 90,
-                  align: "center"
-                });
-                (building.building_specifications || []).forEach(building_specifications => {
+
+                building.inspections.forEach(inspection => {
                   if (addPage(doc, page += 1, 270)) {
-                    rectY = doc.y;
+                    rectY = doc.y - 40;
                   } else {
                     page -= 1;
                   }
-                  doc.rect(rectX, (rectY += 27) - 25, doc.page.width - 90, 25)
-                    .fill('#F4A20B')
-                    .fillColor("white")
-                    .fontSize(14)
-                    .font("Helvetica-Bold");
 
-                  doc.text(`INSPECTION PHOTO`, rectX + 65, rectY - 17)
-                    .text(`DESCRIPTION`, doc.page.width - 220, rectY - 17);
-                  rectY += 182;
-                  if (building_specifications.inspection_photo) {
-                    doc.image(`data:image/jpg;base64,${building_specifications.inspection_photo}`, rectX, rectY - 180, { width: 240, height: 180 });
+                  rectY += 15;
+                  // 🔵 Header Rectangle
+                  drawRect("#F4A20B", xPointH, rectY, doc.page.width - 90, 25, 3, true);
+
+                  rectY += 20;
+                  // 🏷️ inspection desctiption Text
+                  drawText(`${inspection.activity || ""}`, rectX, rectY - 12, {
+                    bold: true, size: 14, color: "#F4A20B", width: doc.page.width - 90
+                  });
+
+                  rectY += 10;
+                  // 🔵 Header Rectangle
+                  drawRect("#F4A20B", xPointH, rectY, doc.page.width - 90, 20, 3, true);
+                  rectY += 20;
+                  // 🏷️ inspection desctiption Text
+                  drawText(`Comments`, rectX, rectY - 15, {
+                    bold: true, size: 12, color: "#F4A20B", width: doc.page.width - 90
+                  });
+                  rectY += 10;
+                  drawText(inspection.comments || "No comments provided.", rectX, rectY, {
+                    size: 10, width: doc.page.width - 90
+                  });
+                  rectY += 15;
+                  // 🔵 Header Rectangle
+                  drawRect("#F4A20B", xPointH, rectY, doc.page.width - 90, 20, 3, true);
+                  rectY += 20;
+                  // 🏷️ inspection desctiption Text
+                  drawText(`Photo(s)`, rectX, rectY - 15, {
+                    bold: true, size: 12, color: "#F4A20B", width: doc.page.width - 90
+                  });
+                  rectY += 10
+                  if (inspection.inspection_photo) {
+                    drawImage(inspection.inspection_photo, xPointH, rectY, 282, 212, 8);
+                    rectY = rectY + 30 + 212 + 20;
                   }
-                  if (building_specifications.description) {
-                    doc.fillColor("#121E28")
-                      .fontSize(10)
-                      .text(`${building_specifications.description || ""}`, doc.page.width - 285, rectY - 160, { width: 240, height: 180, underline: true });
-                  }
-                  rectY = doc.y > rectY ? doc.y : rectY;
-                  doc.x = rectX;
-                  doc.y = rectY;
                 });
               }
 
-              if (building.section_details) {
-                (building.section_details).forEach(section_details => {
-                  if (addPage(doc, page += 1, 270)) {
-                    rectY = doc.y;
-                  } else {
-                    page -= 1;
-                    rectY += 20;
-                  }
-                  doc.rect(rectX, (rectY += 27) - 25, doc.page.width - 90, 25)
-                    .fill('#00529B')
-                    .fillColor("white")
-                    .fontSize(14)
-                    .font("Helvetica-Bold");
-                  doc.y = rectY - 17;
-                  doc.x = rectX;
-                  doc.text(`SECTION: ${section_details.name || ""}`, {
-                    width: doc.page.width - 90,
-                    align: "center"
-                  })
-                    .rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
-                    .fill('#F4A20B')
-                    .fillColor("white")
-                    .fontSize(14)
-                    .font("Helvetica-Bold")
-                    .text(`SECTION OVERVIEW PHOTO`, rectX + 60, rectY - 17)
-                    .text(`COMMENTS`, rectX + 360, rectY - 17);;
-                  if (section_details.section_overview_photo) {
-                    doc.image(`data:image/jpg;base64,${section_details.section_overview_photo}`, rectX, (rectY += 182) - 180, { width: 300, height: 180 });
-                  }
-                  if (section_details.comments) {
-                    doc.y = section_details.section_overview_photo ? rectY - 90 : (rectY += 45) - 25;
-                    doc.x = rectX + 330;
-                    doc.fillColor("#121E28")
-                      .fontSize(11)
-                      .font("Helvetica")
-                      .text(`${section_details.comments}`, {
-                        width: doc.page.width - 390,
-                        align: "left"
-                      });
-                    doc.x = rectX;
-                    rectY = doc.y > rectY ? doc.y : rectY;
-                  }
-                  if (section_details.specification_matrix) {
-                    doc.x = rectX;
-                    doc.y = rectY += 20;
-                    if (addPage(doc, page += 1, 270)) {
-                      rectY = doc.y;
-                    } else {
-                      page -= 1;
-                    }
-                    doc.fontSize(14)
-                      .fillColor("#121E28")
-                      .font("Helvetica-Bold")
-                      .text("SECTION SPECIFICATION MATRIX", {
-                        width: doc.page.width - 90,
-                        align: "center"
-                      });
-                    doc.x = rectX;
-                    rectY = doc.y;
-                    doc.rect(rectX, (rectY += 27) - 25, doc.page.width - 90, 25)
-                      .fill('#00529B')
-                      .fillColor("white")
-                      .fontSize(14)
-                      .font("Helvetica-Bold");
-                    doc.y = rectY - 17;
-                    doc.text(`COMPONENT`, {
-                      width: (doc.page.width - 45) / 2,
-                      align: "center"
-                    });
-                    doc.x = doc.page.width / 2;
-                    doc.y = rectY - 17;
-                    doc.text(`TYPE`, {
-                      width: (doc.page.width - 45) / 2,
-                      align: "center"
-                    });
-                    doc.fillColor("#121E28")
-                      .font('Helvetica')
-                      .fontSize(10);
-                    section_details.specification_matrix.forEach(specification_matrix => {
-                      if (addPage(doc, page += 1, 65)) {
-                        rectY = doc.y;
-                      } else {
-                        page -= 1;
-                      }
-                      doc.lineWidth(1)
-                        .moveTo(rectX, doc.y)
-                        .lineTo(doc.page.width - 45, doc.y)
-                        .stroke();
-                      rectY = doc.y + 12;
-                      doc.text(`${specification_matrix.component || ""}`, rectX + 20, rectY, {
-                        width: (doc.page.width - 45) / 2,
-                        align: 'left'
-                      });
-                      doc.text(`${specification_matrix.type || ""}`, (doc.page.width / 2) + 20, rectY, {
-                        width: (doc.page.width - 45) / 2,
-                        align: 'left'
-                      });
-                      doc.lineWidth(1)
-                        .moveTo(rectX, rectY - 12)
-                        .lineTo(rectX, doc.y)
-                        .moveTo(doc.page.width / 2, rectY - 12)
-                        .lineTo(doc.page.width / 2, doc.y)
-                        .moveTo(doc.page.width - 45, rectY - 12)
-                        .lineTo(doc.page.width - 45, doc.y)
-                        .stroke();
-                      doc.lineWidth(1)
-                        .moveTo(rectX, doc.y)
-                        .lineTo(doc.page.width - 45, doc.y)
-                        .stroke();
-                      rectY = doc.y;
-                    });
-                  }
-                  if (section_details.maintenance_activity_matrix) {
-                    doc.x = rectX;
-                    doc.y = rectY += 20;
-                    if (addPage(doc, page += 1, 270)) {
-                      rectY = doc.y;
-                    } else {
-                      page -= 1;
-                    }
-                    doc.fontSize(14)
-                      .fillColor("#121E28")
-                      .font("Helvetica-Bold")
-                      .text("MAINTENANCE ACTIVITY MATRIX", {
-                        width: doc.page.width - 90,
-                        align: "center"
-                      });
-                    doc.x = rectX;
-                    rectY = doc.y;
-                    doc.rect(rectX, (rectY += 27) - 25, doc.page.width - 90, 25)
-                      .fill('#00529B')
-                      .fillColor("white")
-                      .fontSize(14)
-                      .font("Helvetica-Bold");
+              //--------------------------------------------------------------
+              // 🧱 Building Sections
+              //--------------------------------------------------------------
+              if (building.sections) {
+                // ────────────────────────────────────────────────────────────────
+                // 🏢 SECTIONS LOOP
+                // ────────────────────────────────────────────────────────────────
+                (building.sections || []).forEach((section) => {
+                  rectX = 45; rectY = 45; addPage(doc, page += 1);
 
-                    doc.y = rectY - 17;
-                    doc.text(`RATING`, {
-                      width: (doc.page.width) * 1 / 5,
-                      align: "center"
+                  // SECTION HEADER
+                  drawRect("#00529B", xPointH, rectY - 25, doc.page.width - 90);
+                  drawText(`Section: ${section.name}`, rectX, rectY - 17, {
+                    bold: true, size: 14, color: "#00529B", width: doc.page.width - 120
+                  });
+
+                  if (section.aerial_photo_url) {
+                    const [btnWidth, btnHeight, radius] = [180, 15, 6];
+                    const btnX = doc.page.width - btnWidth - 54, btnY = rectY - 20;
+                    doc.save(); doc.roundedRect(btnX, btnY, btnWidth, btnHeight, radius).fill("#00529B"); doc.restore();
+                    drawText("Section Aerial View Photo", btnX, btnY + 4, {
+                      bold: true, size: 10, color: "white", width: btnWidth, align: "center", link: section.aerial_photo_url
+                    });
+                  }
+
+                  // COMMENTS
+                  drawRect("#F4A20B", xPointH, (rectY += 25) - 20, doc.page.width - 90);
+                  drawText("Comments", rectX, rectY - 13, { bold: true, size: 14, color: "#F4A20B" });
+                  drawText(section.comments || "No comments provided.", rectX, rectY + 20, {
+                    size: 10, width: doc.page.width - 90
+                  });
+
+                  // SECTION PHOTO
+                  const photoY = doc.y + 10;
+                  drawRect("#F4A20B", xPointH, photoY, doc.page.width - 90);
+                  drawText("Section Overview Photo", rectX, photoY + 8, { bold: true, size: 14, color: "#F4A20B" });
+                  if (section.section_overview_photo) {
+                    drawImage(section.section_overview_photo, xPointH, photoY + 35);
+                    rectY = photoY + 35 + 212 + 15;
+                  }
+
+                  //--------------------------------------------------------------
+                  // 🏗️ Section Specification Matrix (Pixel-Perfect Refined)
+                  //--------------------------------------------------------------
+                  rectX = 45;
+                  rectY = 45;
+                  addPage(doc, page += 1);
+
+                  //--------------------------------------------------------------
+                  // 🏗️ Roof Specification Matrix
+                  //--------------------------------------------------------------
+                  if (section.specification_matrix?.length) {
+                    drawHeaderBar("Roof Specification Matrix", rectY);
+                    rectY += 10;
+
+                    const specCols = [
+                      (doc.page.width - 90) * 0.5,
+                      (doc.page.width - 90) * 0.5
+                    ];
+
+                    drawTableHeader(["Component", "Type"], specCols, rectY);
+                    rectY += 25;
+
+                    section.specification_matrix.forEach(row => {
+                      rectY += drawTableRow([row.component, row.type], specCols, rectY);
+                    });
+                  }
+
+                  //--------------------------------------------------------------
+                  // 🧱 Maintenance Activity Matrix
+                  //--------------------------------------------------------------
+                  if (section.maintenance_activity_matrix?.length) {
+                    rectY += 45;
+                    drawHeaderBar("Maintenance Activity Matrix", rectY);
+                    rectY += 10;
+
+                    const maintCols = [
+                      (doc.page.width - 90) * 0.15,
+                      (doc.page.width - 90) * 0.45,
+                      (doc.page.width - 90) * 0.40
+                    ];
+
+                    drawTableHeader(["Rating", "Component", "Defect"], maintCols, rectY);
+                    rectY += 25;
+
+                    section.maintenance_activity_matrix.forEach(row => {
+                      rectY += drawTableRow([row.rating, row.component, row.defect], maintCols, rectY, { withRating: true });
                     });
 
-                    doc.x = doc.page.width * 1 / 5;
-                    doc.y = rectY - 17;
-                    doc.text(`COMPONENT`, {
-                      width: (doc.page.width - 45) * 2 / 5,
-                      align: "center"
+                    // 🟢🔴 Legend
+                    rectY += 25;
+                    const legendY = rectY;
+                    const drawLegend = (x, color, text, symbol) => {
+                      doc.circle(x, legendY + 6, 7).fillAndStroke(color, color);
+                      doc.font("Helvetica-Bold").fontSize(10).fillColor("white")
+                        .text(symbol, x - 4, legendY - 10, {
+                          width: 8, align: "center", characterSpacing: -0.2,
+                          wordSpacing: -0.4
+                        });
+                      doc.font("Helvetica").fontSize(10).fillColor(TEXT_DARK)
+                        .text(text, x + 12, legendY + 2, {
+                          characterSpacing: -0.2,
+                          wordSpacing: -0.4
+                        });
+                    };
+
+                    drawLegend(120, BORDER_GREEN, "No defects", "ND");
+                    drawLegend(360, BORDER_RED, "Repair needed", "RN");
+                    rectY = legendY + 25;
+                  }
+
+                  //--------------------------------------------------------------
+                  // 🏗️ Section Inspection Matrix (Pixel-Perfect)
+                  //--------------------------------------------------------------
+                  rectX = 45;
+                  rectY = 45;
+                  addPage(doc, page += 1);
+                  if (section.inspection_matrix?.length) {
+                    if (addPage(doc, page += 1, 270)) rectY = doc.y; else page -= 1;
+
+                    // Header bar
+                    drawHeaderBar("Section Inspection Matrix", rectY);
+                    rectY += 10;
+
+                    // Column structure
+                    const inspCols = [
+                      (doc.page.width - 90) * 0.15, // Rating
+                      (doc.page.width - 90) * 0.45, // Component
+                      (doc.page.width - 90) * 0.40  // Defect
+                    ];
+
+                    // Table Header
+                    drawTableHeader(["Rating", "Component", "Defect"], inspCols, rectY);
+                    rectY += 25;
+
+                    // Table Rows
+                    section.inspection_matrix.forEach(row => {
+                      rectY += drawTableRow(
+                        [row.rating, row.component, row.defect],
+                        inspCols,
+                        rectY,
+                        { withRating: true }
+                      );
                     });
 
-                    doc.x = (doc.page.width) * 3 / 5;
-                    doc.y = rectY - 17;
-                    doc.text(`DEFECT`, {
-                      width: (doc.page.width - 45) * 2 / 5,
-                      align: "center"
-                    });
-                    doc.fillColor("#121E28")
-                      .font('Helvetica')
-                      .fontSize(10);
-                    section_details.maintenance_activity_matrix.forEach(maintenance_activity_matrix => {
-                      if (addPage(doc, page += 1, 90)) {
-                        rectY = doc.y;
-                      } else {
-                        page -= 1;
-                      }
-                      doc.lineWidth(1)
-                        .moveTo(rectX, doc.y)
-                        .lineTo(doc.page.width - 65, doc.y)
-                        .stroke();
-                      rectY = doc.y + 12;
-                      doc.text(`${maintenance_activity_matrix.component || ""}`, (doc.page.width * 1 / 5) + 70, rectY, {
-                        width: doc.page.width * 2 / 5,
-                        align: 'left'
-                      });
-                      doc.text(`${maintenance_activity_matrix.defect || ""}`, (doc.page.width * 3 / 5) + 20, rectY, {
-                        width: doc.page.width * 2 / 5,
-                        align: 'left'
-                      });
-                      doc.lineWidth(doc.y - rectY + 12)
-                        .lineCap('butt')
-                        .moveTo(rectX, rectY)
-                        .lineTo((doc.page.width * 1 / 5) + 40, rectY)
-                        .fillAndStroke(`${maintenance_activity_matrix.rating === "RN" ? "#C4222F" : "#5AA755"}`, `${maintenance_activity_matrix.rating === "RN" ? "#C4222F" : "#5AA755"}`)
-                        .lineWidth(1)
-                        .fillAndStroke("#121E28", "#121E28")
-                        .fillColor("white")
-                        .font("Helvetica-Bold")
-                        .text(`${maintenance_activity_matrix.rating === "RN" ? "X" : "+"}`, rectX, rectY, {
-                          width: doc.page.width * 1 / 5,
-                          align: 'center'
-                        })
-                        .font("Helvetica")
-                        .fillColor("#121E28");
-                      doc.lineWidth(1)
-                        .moveTo(rectX, rectY - 12)
-                        .lineTo(rectX, doc.y)
-                        .moveTo((doc.page.width * 1 / 5) + 40, rectY - 12)
-                        .lineTo((doc.page.width * 1 / 5) + 40, doc.y)
-                        .moveTo(doc.page.width * 3 / 5, rectY - 12)
-                        .lineTo(doc.page.width * 3 / 5, doc.y)
-                        .moveTo(doc.page.width - 45, rectY - 12)
-                        .lineTo(doc.page.width - 45, doc.y)
-                        .stroke();
-                      doc.lineWidth(1)
-                        .moveTo(rectX, doc.y)
-                        .lineTo(doc.page.width - 45, doc.y)
-                        .stroke();
-                      rectY = doc.y;
-                    });
-                    rectY += 20
-                    doc.lineWidth(20)
-                      .lineCap('butt')
-                      .moveTo(100, rectY)
-                      .lineTo(130, rectY)
-                      .fillAndStroke("#5AA755", "#5AA755")
-                      .moveTo(340, rectY)
-                      .lineTo(370, rectY)
-                      .fillAndStroke("#C4222F", "#C4222F")
-                      .fillColor("#121E28")
-                      .fontSize(14)
-                      .font("Helvetica-Bold")
-                      .fillColor("white")
-                      .text("+", 112, rectY - 5)
-                      .fillColor("#121E28")
-                      .fontSize(12)
-                      .text("    Maintenance - No Defects", 120, rectY - 5)
-                      .fillColor("white")
-                      .fontSize(14)
-                      .text("x", 352, rectY - 5)
-                      .fillColor("#121E28")
-                      .fontSize(12)
-                      .text("    Maintenance - Repair Needed", 360, rectY - 5)
-                      .font("Helvetica");
-                    doc.x = rectX;
-                  }
-                  if (section_details.inspection_matrix) {
-                    doc.x = rectX;
-                    doc.y = rectY += 30;
-                    if (addPage(doc, page += 1, 270)) {
-                      rectY = doc.y;
-                    } else {
-                      page -= 1;
-                    }
-                    doc.fontSize(14)
-                      .fillColor("#121E28")
-                      .font("Helvetica-Bold")
-                      .text("SECTION INSPECTION MATRIX", {
-                        width: doc.page.width - 90,
-                        align: "center"
-                      });
-                    doc.x = rectX;
-                    rectY = doc.y;
-                    doc.rect(rectX, (rectY += 27) - 25, doc.page.width - 90, 25)
-                      .fill('#00529B')
-                      .fillColor("white")
-                      .fontSize(14)
-                      .font("Helvetica-Bold");
+                    // 🟢🔴 Legend
+                    rectY += 25;
+                    const legendY = rectY;
 
-                    doc.y = rectY - 17;
-                    doc.text(`RATING`, {
-                      width: (doc.page.width) * 1 / 5,
-                      align: "center"
+                    const drawLegend = (x, color, text, symbol) => {
+                      doc.circle(x, legendY + 6, 7).fillAndStroke(color, color);
+                      doc.font("Helvetica-Bold").fontSize(10).fillColor("white")
+                        .text(symbol, x - 4, legendY - 10, {
+                          width: 8, align: "center", characterSpacing: -0.2,
+                          wordSpacing: -0.4
+                        });
+                      doc.font("Helvetica").fontSize(10).fillColor(TEXT_DARK)
+                        .text(text, x + 12, legendY + 2, {
+                          characterSpacing: -0.2,
+                          wordSpacing: -0.4
+                        });
+                    };
+
+                    drawLegend(120, BORDER_GREEN, "Inspection - No Defects", "ND");
+                    drawLegend(360, BORDER_RED, "Inspection - Repair Needed", "RN");
+
+                    rectY = legendY + 25;
+                  }
+
+                  // --------------------------------------------------------------
+                  // 🏗️ Section Inspections
+                  // --------------------------------------------------------------
+                  if (section.section_inspections?.length) {
+                    rectX = 45;
+                    rectY = 45;
+                    addPage(doc, page += 1);
+
+                    // 🔹 Header: Inspections for Section
+                    drawRoundedRect(xPointH, rectY, doc.page.width - 90, 35, 3, BORDER_BLUE);
+                    doc.font("Helvetica-Bold").fontSize(18).fillColor(BORDER_BLUE)
+                      .text(`Inspections for section: ${section.name}` || "", rectX, rectY + 9);
+                    rectY += 40;
+
+                    // 🔍 Loop through each inspection item
+                    section.section_inspections.forEach((insp, idx) => {
+                      if (addPage(doc, page += 1, 400)) rectY = doc.y; else page -= 1;
+
+                      const isRepair = insp.rating === "RN";
+                      const color = isRepair ? BORDER_RED : BORDER_GREEN;
+                      const symbol = isRepair ? "RN" : "ND";
+
+                      // 🟢🔴 Inspection Title
+                      drawRoundedRect(xPointH, rectY, doc.page.width - 90, 25, 3, color);
+                      doc.circle(rectX + 7, rectY + 12, 8).fillAndStroke(color, color);
+                      doc.font("Helvetica-Bold").fontSize(11).fillColor("white")
+                        .text(symbol, rectX, rectY + 7);
+                      doc.font("Helvetica-Bold").fontSize(13).fillColor(color)
+                        .text(`${insp.component || ""} : ${insp.defect || (isRepair ? "Repair Needed" : "No Defects")}`,
+                          rectX + 17, rectY + 7);
+                      rectY += 30;
+
+                      // 🟠 Description
+                      drawRoundedRect(xPointH, rectY, doc.page.width - 90, 22, 3, BORDER_ORANGE);
+                      doc.font("Helvetica-Bold").fontSize(12).fillColor(BORDER_ORANGE)
+                        .text("Description:", rectX, rectY + 7);
+                      rectY += 30;
+
+                      doc.font("Helvetica").fontSize(10).fillColor(TEXT_DARK)
+                        .text(insp.description || "—", rectX, rectY, {
+                          width: doc.page.width - 90,
+                          align: "left",
+                          characterSpacing: -0.2,
+                          wordSpacing: -0.4
+                        });
+                      rectY = doc.y + 5;
+
+                      // 🟠 Comments (if present)
+                      if (insp.comments = "X") {
+                        drawRoundedRect(xPointH, rectY, doc.page.width - 90, 22, 3, BORDER_ORANGE);
+                        doc.font("Helvetica-Bold").fontSize(12).fillColor(BORDER_ORANGE)
+                          .text("Comments:", rectX, rectY + 7);
+                        rectY += 30;
+                        doc.font("Helvetica").fontSize(10).fillColor(TEXT_DARK)
+                          .text(insp.comments, rectX, rectY, {
+                            width: doc.page.width - 90,
+                            align: "left",
+                            characterSpacing: -0.2,
+                            wordSpacing: -0.4
+                          });
+                        rectY = doc.y + 5;
+                      }
+
+                      // 🟠 Photo(s)
+                      if (insp.inspection_photo) {
+                        drawRoundedRect(xPointH, rectY, doc.page.width - 90, 22, 3, BORDER_ORANGE);
+                        doc.font("Helvetica-Bold").fontSize(12).fillColor(BORDER_ORANGE)
+                          .text("Photo(s):", rectX, rectY + 7);
+                        rectY += 30;
+
+                        doc.save();
+                        const imgWidth = 240;
+                        const imgHeight = 180;
+                        doc.roundedRect(rectX, rectY, imgWidth, imgHeight, 5).clip();
+                        doc.image(`data:image/jpeg;base64,${insp.inspection_photo}`, rectX, rectY, {
+                          width: imgWidth,
+                          height: imgHeight
+                        });
+                        doc.restore();
+                        rectY += imgHeight + 10;
+
+                        doc.font("Helvetica").fontSize(9).fillColor(TEXT_DARK)
+                          .text(insp.photo_comment || "This is a sample photo comment.",
+                            rectX, rectY, { width: imgWidth });
+                        rectY = doc.y + 10;
+                      }
+
+                      // Add space before next inspection block
+                      rectY += 10;
+                    });
+                  }
+
+                  //--------------------------------------------------------------
+                  // 🏗️ Maintenance Activities for Section
+                  //--------------------------------------------------------------
+                  if (section.section_maint_act_defects?.length || section.section_maint_act_no_defects?.length) {
+                    rectX = 45;
+                    rectY = 45;
+                    addPage(doc, page += 1);
+
+                    // 🔹 Blue Header Bar
+                    const headerH = 25;
+                    drawRoundedRect(xPointH, rectY, doc.page.width - 90, headerH + 25, 4, "#00529B");
+                    drawText("Maintenance Activities for section:", rectX, rectY + 10, {
+                      size: 14, color: "#00529B", bold: true, align: "left",
+                      width: doc.page.width - 90
+                    });
+                    drawText(section.name || "", rectX, rectY + 27, {
+                      size: 18, color: "#00529B", bold: true, align: "left",
+                      width: doc.page.width - 90
                     });
 
-                    doc.x = doc.page.width * 1 / 5;
-                    doc.y = rectY - 17;
-                    doc.text(`COMPONENT`, {
-                      width: (doc.page.width - 45) * 2 / 5,
-                      align: "center"
+                    rectY += 55;
+
+                    //------------------------------------------------------------
+                    // Render Helper for Each Maintenance Activity Entry
+                    //------------------------------------------------------------
+                    const renderMaintActivity = (activity, isDefect) => {
+
+                      if (addPage(doc, page += 1, 400)) rectY = doc.y; else page -= 1;
+                      // 🟧 Activity Header (outlined, no fill)
+                      const barColor = "#F4A20B";
+                      const barHeight = 25;
+
+                      // Draw only the border — rounded edges, thin stroke
+                      doc.lineJoin("round")
+                        .lineWidth(3)
+                        .strokeColor(barColor)
+                        .roundedRect(xPointH, rectY, doc.page.width - 90, barHeight, 4)
+                        .stroke();
+
+                      // Title text inside the bordered box
+                      drawText(`${activity.title || ""}`, xPointH + 12, rectY + 6, {
+                        size: 13,
+                        color: barColor,   // orange text same as border
+                        bold: true
+                      });
+
+                      rectY += barHeight + 5;
+
+                      // 🟠 Description Header
+                      drawRect("#F4A20B", xPointH, rectY, doc.page.width - 90, 22);
+                      drawText("Description:", rectX, rectY + 7, {
+                        size: 12, color: "#F4A20B", bold: true
+                      });
+
+                      rectY += 30;
+                      drawText(activity.description_text || "", rectX, rectY, {
+                        size: 10, color: "#121E28", width: doc.page.width - 100
+                      });
+
+                      rectY = doc.y + 5;
+
+                      // 🟠 Comments
+                      drawRect("#F4A20B", xPointH, rectY, doc.page.width - 90, 22);
+                      drawText("Comments:", rectX, rectY + 5, {
+                        size: 12, color: "#F4A20B", bold: true
+                      });
+                      rectY += 22;
+                      drawText(activity.comments || "—", rectX, rectY + 5, {
+                        size: 10, color: "#121E28", width: doc.page.width - 100
+                      });
+                      rectY = doc.y + 8;
+
+                      // 🟠 Photo Headers
+                      drawRect("#F4A20B", xPointH, rectY, (doc.page.width - 90) / 2 - 10, 22);
+                      drawText("Defect Photo(s):", rectX, rectY + 7, {
+                        size: 12, color: "#F4A20B", bold: true
+                      });
+                      drawRect("#F4A20B", xPointH + (doc.page.width - 90) / 2 + 10, rectY,
+                        (doc.page.width - 90) / 2 - 10, 22);
+                      drawText("Repair Photo(s):", xPointH + (doc.page.width - 90) / 2 + 15, rectY + 7, {
+                        size: 12, color: "#F4A20B", bold: true
+                      });
+
+                      rectY += 28;
+
+                      // 📸 Photos
+                      const photoW = (doc.page.width - 120) / 2;
+                      const photoH = 180;
+                      const leftX = xPointH;
+                      const rightX = xPointH + photoW + 29;
+
+                      // Defect Photos
+                      if (activity.maintenance_photo) {
+                        drawImage(activity.maintenance_photo, leftX, rectY, photoW, photoH, 6,
+                          activity.maintenance_comment || "This is a sample photo comment.");
+                      }
+
+                      // Repair Photos
+                      if (activity.repair_photo) {
+                        drawImage(activity.repair_photo, rightX, rectY, photoW, photoH, 6,
+                          activity.repair_comment || "This is a sample photo comment.");
+                      }
+
+                      rectY += photoH + 40;
+                    };
+
+                    //------------------------------------------------------------
+                    // Render Both Defects & No-Defects Activities
+                    //------------------------------------------------------------
+                    (section.section_maint_act_defects || []).forEach(item => renderMaintActivity(item, true));
+                    (section.section_maint_act_no_defects || []).forEach(item => renderMaintActivity(item, false));
+                  }
+
+                  //--------------------------------------------------------------
+                  // RECOMMENDED WORK ITEMS
+                  //--------------------------------------------------------------
+                  (section.recommended_work || []).forEach((work) => {
+                    rectX = 45;
+                    rectY = 45;
+                    addPage(doc, page += 1);
+                    const headerX = rectX, headerWidth = doc.page.width - 90;
+
+                    // Header
+                    drawRect("#00529B", xPointH, (rectY += 25) - 25, headerWidth);
+                    drawText("Recommended Work for section:", headerX, rectY - 17, {
+                      bold: true, size: 14, color: "#00529B", width: headerWidth - 20
+                    });
+                    drawText(section.section_name || "", headerX + 215, rectY - 17, {
+                      bold: true, size: 14, color: "#00529B", width: headerWidth
                     });
 
-                    doc.x = (doc.page.width) * 3 / 5;
-                    doc.y = rectY - 17;
-                    doc.text(`DEFECT`, {
-                      width: (doc.page.width - 45) * 2 / 5,
-                      align: "center"
+                    // Drainage
+                    drawRect("#F4A20B", xPointH, (rectY += 30) - 25, headerWidth);
+                    drawText(`${work.selection || ""}`, headerX, rectY - 17, {
+                      bold: true, size: 13, color: "#F4A20B", width: headerWidth
                     });
-                    doc.fillColor("#121E28")
-                      .font('Helvetica')
-                      .fontSize(10);
-                    section_details.inspection_matrix.forEach(inspection_matrix => {
-                      if (addPage(doc, page += 1, 90)) {
-                        rectY = doc.y;
-                      } else {
-                        page -= 1;
-                      }
-                      doc.lineWidth(1)
-                        .moveTo(rectX, doc.y)
-                        .lineTo(doc.page.width - 65, doc.y)
-                        .stroke();
-                      rectY = doc.y + 12;
-                      doc.text(`${inspection_matrix.component || ""}`, (doc.page.width * 1 / 5) + 70, rectY, {
-                        width: doc.page.width * 2 / 5,
-                        align: 'left'
-                      });
-                      doc.text(`${inspection_matrix.defect || ""}`, (doc.page.width * 3 / 5) + 20, rectY, {
-                        width: doc.page.width * 2 / 5,
-                        align: 'left'
-                      });
-                      doc.lineWidth(doc.y - rectY + 12)
-                        .lineCap('butt')
-                        .moveTo(rectX, rectY)
-                        .lineTo((doc.page.width * 1 / 5) + 40, rectY)
-                        .fillAndStroke(`${inspection_matrix.rating === "RN" ? "#C4222F" : "#5AA755"}`, `${inspection_matrix.rating === "RN" ? "#C4222F" : "#5AA755"}`)
-                        .lineWidth(1)
-                        .fillAndStroke("#121E28", "#121E28")
-                        .fillColor('white')
-                        .font("Helvetica-Bold")
-                        .text(`${inspection_matrix.rating === "RN" ? "X" : "+"}`, rectX, rectY, {
-                          width: doc.page.width * 1 / 5,
-                          align: 'center'
-                        })
-                        .font("Helvetica")
-                        .fillColor("#121E28");
-                      doc.lineWidth(1)
-                        .moveTo(rectX, rectY - 12)
-                        .lineTo(rectX, doc.y)
-                        .moveTo((doc.page.width * 1 / 5) + 40, rectY - 12)
-                        .lineTo((doc.page.width * 1 / 5) + 40, doc.y)
-                        .moveTo(doc.page.width * 3 / 5, rectY - 12)
-                        .lineTo(doc.page.width * 3 / 5, doc.y)
-                        .moveTo(doc.page.width - 45, rectY - 12)
-                        .lineTo(doc.page.width - 45, doc.y)
-                        .stroke();
-                      doc.lineWidth(1)
-                        .moveTo(rectX, doc.y)
-                        .lineTo(doc.page.width - 45, doc.y)
-                        .stroke();
-                      rectY = doc.y;
+
+                    // Comments
+                    drawRect("#F4A20B", xPointH, (rectY += 25) - 20, headerWidth);
+                    drawText("Comments:", headerX, rectY - 13, { bold: true, size: 12, color: "#F4A20B" });
+                    drawText(work.comments || "No comments provided.", headerX, rectY + 20, {
+                      size: 10, width: headerWidth
                     });
-                    rectY += 20
-                    doc.lineWidth(20)
-                      .lineCap('butt')
-                      .moveTo(100, rectY)
-                      .lineTo(130, rectY)
-                      .fillAndStroke("#5AA755", "#5AA755")
-                      .moveTo(340, rectY)
-                      .lineTo(370, rectY)
-                      .fillAndStroke("#C4222F", "#C4222F")
-                      .fillColor("#121E28")
-                      .fontSize(14)
-                      .font("Helvetica-Bold")
-                      .fillColor("white")
-                      .text("+", 112, rectY - 5)
-                      .fillColor("#121E28")
-                      .fontSize(12)
-                      .text("    Inspection - No Defects", 120, rectY - 5)
-                      .fillColor("white")
-                      .fontSize(14)
-                      .text("x", 352, rectY - 5)
-                      .fillColor("#121E28")
-                      .fontSize(12)
-                      .text("    Inspection - Repair Needed", 360, rectY - 5)
-                      .font("Helvetica");
-                    doc.x = rectX;
-                  }
-                  if (section_details.section_inspections) {
-                    if (addPage(doc, page += 1, 570)) {
-                      rectY = doc.y;
-                    } else {
-                      page -= 1;
-                    }
-                    doc.rect(rectX, (rectY += 52) - 50, doc.page.width - 90, 50)
-                      .fill('#00529B')
-                      .fillColor("white")
-                      .fontSize(14)
-                      .font("Helvetica-Bold")
-                      .text(`INSPECTIONS FOR SECTION:`, rectX, rectY - 42, {
-                        align: "center",
-                        width: doc.page.width - 90
-                      })
-                      .text(`${section_details.name || ""}`, rectX, rectY - 20, {
-                        align: "center",
-                        width: doc.page.width - 90
-                      });
-                    (section_details.section_inspections || []).forEach(section_inspections => {
-                      if (addPage(doc, page += 1, 270)) {
-                        rectY = doc.y;
-                      } else {
-                        page -= 1;
-                      }
-                      doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
-                        .fill('#F4A20B')
-                        .fillColor("white")
-                        .fontSize(14)
-                        .font("Helvetica-Bold")
-                        .text(`INSPECTION PHOTO`, rectX + 65, rectY - 17)
-                        .text(`DESCRIPTION`, doc.page.width - 220, rectY - 17)
-                        .font("Helvetica");
-                      if (section_inspections.inspection_photo) {
-                        doc.image(`data:image/jpeg;base64,${section_inspections.inspection_photo}`, rectX, (rectY += 182) - 180, { width: 240, height: 180 });
-                      }
-                      doc.fillColor("#121E28")
-                        .fontSize(10)
-                        .font("Helvetica-Bold")
-                        .text(`${section_inspections.description || ""}`, doc.page.width - 285, section_inspections.inspection_photo ? rectY - 160 : rectY + 20, { width: 240, height: 180, underline: true })
-                        .font("Helvetica")
-                        .text(`${section_inspections.description_text || ""}`, doc.page.width - 275, doc.y, { width: 230, height: 180 })
-                        .font("Helvetica-Bold")
-                        .text(`${section_inspections.comments ? "Comments" : ""}`, doc.page.width - 285, doc.y + 4, { width: 240, height: 180, underline: true })
-                        .font("Helvetica")
-                        .text(`${section_inspections.comments || ""}`, doc.page.width - 275, doc.y + 4, { width: 230, height: 180 });
-                      rectY = doc.y > rectY ? doc.y + 2 : rectY + 2;
+
+                    // Photos
+                    const photoHeaderY = doc.y + 10;
+                    drawRect("#F4A20B", xPointH, photoHeaderY, headerWidth);
+                    drawText("Photo(s):", headerX, photoHeaderY + 7, { bold: true, size: 12, color: "#F4A20B" });
+
+                    // Photo Grid
+                    const photos = work.photos || [];
+                    const imgW = 282, imgH = 212, colGap = 25, radius = 4;
+                    const photoStartY = photoHeaderY + 32;
+                    let col = 0, row = 0;
+
+                    photos.forEach((photo) => {
+                      const imgX = headerX + col * (imgW + colGap);
+                      const imgY = photoStartY + row * (imgH + 60);
+                      drawImage(photo.photo, imgX, imgY, imgW, imgH, radius, photo.comment);
+                      if (++col >= 2) { col = 0; row++; }
                     });
-                  }
-                  if (section_details.section_maint_act_defects) {
-                    if (addPage(doc, page += 1, 570)) {
-                      rectY = doc.y;
-                    } else {
-                      page -= 1;
-                    }
-                    doc.rect(rectX, (rectY += 52) - 50, doc.page.width - 90, 50)
-                      .fill('#00529B')
-                      .fillColor("white")
-                      .fontSize(14)
-                      .font("Helvetica-Bold")
-                      .text(`MAINTENANCE ACTIVITIES WITH DEFECTS FOR SECTION:`, rectX, rectY - 42, {
-                        align: "center",
-                        width: doc.page.width - 90
-                      })
-                      .text(`${section_details.name}`, rectX, rectY - 20, {
-                        align: "center",
-                        width: doc.page.width - 90
-                      });
-                    (section_details.section_maint_act_defects || []).forEach(section_maint_act_defects => {
-                      if (addPage(doc, page += 1, 270)) {
-                        rectY = doc.y;
-                      } else {
-                        page -= 1;
-                      }
-                      doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
-                        .fill('#F4A20B')
-                        .fillColor("white")
-                        .fontSize(14)
-                        .font("Helvetica-Bold")
-                        .text(`MAINTENANCE PHOTO`, rectX + 65, rectY - 17)
-                        .text(`REPAIR PHOTO`, doc.page.width - 220, rectY - 17);
-                      if (section_maint_act_defects.maintenance_photo) {
-                        doc.image(`data:image/jpeg;base64,${section_maint_act_defects.maintenance_photo}`, rectX, (rectY += 187) - 185, { width: 250, height: 180 });
-                      }
-                      if (section_maint_act_defects.repair_photo) {
-                        doc.image(`data:image/jpeg;base64,${section_maint_act_defects.repair_photo}`, doc.page.width - 295, (rectY) - 185, { width: 250, height: 180 });
-                      }
-                      doc.fillColor("#121E28")
-                        .fontSize(10)
-                        .font("Helvetica-Bold")
-                        .text(`${section_maint_act_defects.description || ""}`, rectX, rectY += 5, { width: doc.page.width - 90, underline: true })
-                        .font("Helvetica")
-                        .text(`${section_maint_act_defects.description_text || ""}`, rectX + 10, doc.y, { width: doc.page.width - 100 })
-                        .font("Helvetica-Bold")
-                        .text(`${section_maint_act_defects.comments ? "Comments" : ""}`, rectX, doc.y + 4, { width: doc.page.width - 90, underline: true })
-                        .font("Helvetica")
-                        .text(`${section_maint_act_defects.comments || ""}`, rectX + 10, doc.y + 4, { width: doc.page.width - 100 });
-                      rectY = doc.y > rectY ? doc.y + 2 : rectY + 2;
-                      doc.x = rectX;
-                    });
-                  }
-                  if (section_details.section_maint_act_no_defects) {
-                    if (addPage(doc, page += 1, 570)) {
-                      rectY = doc.y;
-                    } else {
-                      page -= 1;
-                    }
-                    doc.rect(rectX, (rectY += 52) - 50, doc.page.width - 90, 50)
-                      .fill('#00529B')
-                      .fillColor("white")
-                      .fontSize(14)
-                      .font("Helvetica-Bold")
-                      .text(`MAINTENANCE ACTIVITIES WITH NO DEFECTS FOR SECTION:`, rectX, rectY - 42, {
-                        align: "center",
-                        width: doc.page.width - 90
-                      })
-                      .text(`${section_details.name}`, rectX, rectY - 20, {
-                        align: "center",
-                        width: doc.page.width - 90
-                      });
-                    (section_details.section_maint_act_no_defects || []).forEach(section_maint_act_no_defects => {
-                      if (addPage(doc, page += 1, 270)) {
-                        rectY = doc.y;
-                      } else {
-                        page -= 1;
-                      }
-                      doc.rect(rectX, (rectY += 25) - 25, doc.page.width - 90, 25)
-                        .fill('#F4A20B')
-                        .fillColor("white")
-                        .fontSize(14)
-                        .font("Helvetica-Bold")
-                        .text(`MAINTENANCE PHOTO`, rectX + 65, rectY - 17)
-                        .text(`DESCRIPTION`, doc.page.width - 220, rectY - 17);
-                      if (section_maint_act_no_defects.maintenance_photo) {
-                        doc.image(`data:image/jpeg;base64,${section_maint_act_no_defects.maintenance_photo}`, rectX, (rectY += 182) - 180, { width: 240, height: 180 });
-                      }
-                      doc.fillColor("#121E28")
-                        .fontSize(10)
-                        .font("Helvetica-Bold")
-                        .text(`${section_maint_act_no_defects.description || ""}`, doc.page.width - 285, (section_maint_act_no_defects.maintenance_photo ? rectY - 160 : rectY + 20), { width: 240, underline: true })
-                        .font("Helvetica")
-                        .text(`${section_maint_act_no_defects.description_text || ""}`, doc.page.width - 275, doc.y, { width: 230, height: 180 })
-                        .font("Helvetica-Bold")
-                        .text(`${section_maint_act_no_defects.comments ? "Comments" : ""}`, doc.page.width - 285, doc.y + 4, { width: 240, underline: true })
-                        .font("Helvetica")
-                        .text(`${section_maint_act_no_defects.comments || ""}`, doc.page.width - 275, doc.y + 4, { width: 230 });
-                      rectY = doc.y > rectY ? doc.y + 2 : rectY + 2;
-                      doc.x = rectX;
-                    });
-                  }
+
+                    rectY = photoStartY + Math.ceil(photos.length / 2) * (imgH + 60) + 10;
+                  });
+
                 });
               }
 
@@ -1150,19 +1119,19 @@ sap.ui.define([],
               reportName,
               page,
               checkSpace,
-              footerX: 45,
-              footerLineStart: 45,
+              footerX: 40,
+              footerLineStart: 40,
               footerLineEnd: 45,
-              reportNameX: 190,
-              pageXOffset: 100,
-              includeSpacing: false // PM version didn’t use character/word spacing
+              reportNameX: 230,
+              pageXOffset: 85,
+              includeSpacing: true // PM version used character/word spacing
             });
           };
 
           that.toDataURL("pdfgen/CMLogotaglineHigh.png", function (logo) {
             niceDocument(logo, {
               reportName: reportName,
-              reportNameX: 210,
+              reportNameX: 230,
               downloadName: 'PM_Report',
               bType: bType,
               headerFn: header,
@@ -1272,7 +1241,7 @@ sap.ui.define([],
 
               // 🔵 BUILDING HEADER BAR
               rectY += 35;
-              drawHeader("#00529B", building.building_name, rectY, "Building: ");
+              drawHeader("#00529B", building.name, rectY, "Building: ");
 
               //--------------------------------------------------------------
               // 🟧 SECTION LIST
@@ -1348,7 +1317,7 @@ sap.ui.define([],
               // 🏠 BUILDING HEADER
               // ────────────────────────────────────────────────────────────────
               drawRect("#00529B", xPointH, (rectY += 27) - 25, doc.page.width - 90);
-              drawText(`Building: ${building.building_name}`, rectX, rectY - 17, {
+              drawText(`Building: ${building.name}`, rectX, rectY - 17, {
                 bold: true, size: 14, color: "#00529B", width: doc.page.width - 120
               });
 
@@ -1379,9 +1348,47 @@ sap.ui.define([],
               const photoHeaderY = doc.y + 10;
               drawRect("#F4A20B", xPointH, photoHeaderY, doc.page.width - 90);
               drawText("Building Photo", rectX, photoHeaderY + 8, { bold: true, size: 14, color: "#F4A20B" });
-              if (building.building_photo) {
-                drawImage(building.building_photo, xPointH, photoHeaderY + 35, 282, 212, 8);
-                rectY = photoHeaderY + 35 + 212 + 15;
+              if (building.photos?.length) {
+                const photoWidth = 257;
+                const photoHeight = 172;
+                const gap = 10;
+                const photosPerRow = 2;
+
+                let x = xPointH;
+                let y = photoHeaderY + 35;
+                let photoCount = 0;
+
+                building.photos.forEach((photo, index) => {
+                  // 🧾 Page break if image exceeds bottom margin
+                  if (y + photoHeight + 60 > doc.page.height - 45) {
+                    addPage(doc, page += 1);
+                    y = 45; // reset Y same as initial base
+                    x = xPointH;
+                  }
+
+                  // 🖼️ Draw the photo (use your helper)
+                  drawImage(
+                    photo.photo,
+                    x,
+                    y,
+                    photoWidth,
+                    photoHeight,
+                    8,
+                    photo.comment || "This is a sample photo comment."
+                  );
+
+                  photoCount++;
+                  if (photoCount % photosPerRow === 0) {
+                    // move to next row
+                    x = xPointH;
+                    y += photoHeight + 35;
+                  } else {
+                    // move to next column
+                    x += photoWidth + gap;
+                  }
+                });
+
+                rectY = y + photoHeight + 15; // keep rectY consistent
               }
 
               // ────────────────────────────────────────────────────────────────
@@ -1396,7 +1403,7 @@ sap.ui.define([],
                   bold: true, size: 14, color: "#00529B", width: doc.page.width - 120
                 });
 
-                if (section.aerial_photo_url === 'X') {
+                if (section.aerial_photo_url) {
                   const [btnWidth, btnHeight, radius] = [180, 15, 6];
                   const btnX = doc.page.width - btnWidth - 54, btnY = rectY - 20;
                   doc.save(); doc.roundedRect(btnX, btnY, btnWidth, btnHeight, radius).fill("#00529B"); doc.restore();
@@ -1435,7 +1442,9 @@ sap.ui.define([],
 
                 // DEFECTS LOOP
                 (section.defects || []).forEach(defect => {
-                  if (addPage(doc, page += 1, 270)) rectY = doc.y; else page -= 1;
+                  rectX = 45;
+                  rectY = 45;
+                  addPage(doc, page += 1);
 
                   // DEFECT HEADER
                   drawRect("#F4A20B", xPointH, (rectY += 52) - 45, doc.page.width - 90);
@@ -1446,9 +1455,9 @@ sap.ui.define([],
                   const leftColX = xPointH, rightColX = xPointH + 270, sectionTopY = rectY - 10;
 
                   // Overview
-                  drawRect("#F4A20B", leftColX, sectionTopY, 252);
+                  drawRect("#F4A20B", leftColX, sectionTopY, 257);
                   drawText("Overview:", rectX, sectionTopY + 7, { bold: true, size: 12, color: "#F4A20B" });
-                  drawImage(defect.repair_overview_photo, leftColX, sectionTopY + 35, 252, 172);
+                  drawImage(defect.repair_overview_photo, leftColX, sectionTopY + 35, 257, 172);
 
                   // Description
                   drawRect("#F4A20B", rightColX, sectionTopY, doc.page.width - 360);
@@ -1467,18 +1476,20 @@ sap.ui.define([],
 
                   // Defect + Repair Photos
                   const photoRowY = Math.max(doc.y + 25, sectionTopY + 270);
-                  drawRect("#F4A20B", leftColX, photoRowY, 252);
+                  drawRect("#F4A20B", leftColX, photoRowY, 257);
                   drawText("Defect:", rectX, photoRowY + 7, { bold: true, size: 12, color: "#F4A20B" });
-                  drawImage(defect.defect_photo, leftColX, photoRowY + 35, 252, 172);
+                  drawImage(defect.defect_photo, leftColX, photoRowY + 35, 257, 172);
 
                   drawRect("#F4A20B", rightColX, photoRowY, doc.page.width - 360);
                   drawText("Repair:", rightColX + 5, photoRowY + 7, { bold: true, size: 12, color: "#F4A20B" });
-                  drawImage(defect.repair_photo, rightColX, photoRowY + 35, 252, 172);
+                  drawImage(defect.repair_photo, rightColX, photoRowY + 35, 257, 172);
                 });
 
                 // RECOMMENDED WORK ITEMS
                 (section.recommended_work || []).forEach((work) => {
-                  if (addPage(doc, page += 1, 270)) rectY = doc.y; else page -= 1;
+                  rectX = 45;
+                  rectY = 45;
+                  addPage(doc, page += 1);
                   const headerX = rectX, headerWidth = doc.page.width - 90;
 
                   // Header
@@ -1733,7 +1744,7 @@ sap.ui.define([],
       },
       createFirstPageInfo: function (doc, jsonData, logo, reportName, xPoint, yPoint, xPointH, yPointH, xPointCol1, yPointCol1, xPointCol2, yPointCol2) {
 
-        const pd = jsonData.project_details;
+        const pd = jsonData;
         const blue = "#00529B";
         const textColor = "#121E28";
         const lineW = 3;
@@ -1800,9 +1811,9 @@ sap.ui.define([],
         doc.fillColor(textColor)
           .font("Helvetica").fontSize(12)
           .text(`Notification: ${pd.notification_number || ""}`, xPointCol1, yPointCol1, { characterSpacing: -0.2, wordSpacing: -0.4 })
-          .text(pd.start_work_date ? `Start Work Date: ${pd.start_work_date}` : "", xPointCol2, yPointCol2, { characterSpacing: -0.2, wordSpacing: -0.4 })
+          .text(pd.start_work_date ? `Start Work Date: ${pd.start_work_date}` : "", xPointH + 290, yPointCol2, { characterSpacing: -0.2, wordSpacing: -0.4 })
           .text(`PO Number: ${pd.po_number || ""}`, xPointCol1, yPointCol1 + 20, { characterSpacing: -0.2, wordSpacing: -0.4 })
-          .text(pd.completed_work_date ? `Completed Work Date: ${pd.completed_work_date}` : "", xPointCol2, yPointCol2 + 20, { characterSpacing: -0.2, wordSpacing: -0.4 });
+          .text(pd.completed_work_date ? `Completed Work Date: ${pd.completed_work_date}` : "", xPointH + 290, yPointCol2 + 20, { characterSpacing: -0.2, wordSpacing: -0.4 });
 
         // -----------------------------------------------------------
         // CUSTOMER + SERVICE MANAGER
@@ -1998,7 +2009,6 @@ sap.ui.define([],
         doc.lineJoin("round").lineWidth(3).strokeColor(borderColor)
           .rect(xPointH, rectY, fullWidth, 0.5).stroke();
       },
-
       toDataURL: function (src, callback) {
         var image = new Image();
         image.crossOrigin = 'Anonymous';
