@@ -16,6 +16,62 @@ sap.ui.define([],
       maximumFractionDigits: 2
     };
 
+    let xPointH = 40,
+      yPointH = 110,
+      xPointCol1 = 40,
+      yPointCol1 = 125,
+      xPointCol2 = 282,
+      yPointCol2 = 125;
+
+    //--------------------------------------------------------------
+    // 🧱 Common Helpers
+    //--------------------------------------------------------------
+    const BORDER_BLUE = "#00529B";
+    const BORDER_GREEN = "#5AA755";
+    const BORDER_RED = "#C4222F";
+    const BORDER_ORANGE = "#F4A20B";
+    const TEXT_DARK = "#121E28";
+
+    // ────────────────────────────────────────────────────────────────
+    // 🧩 Local helpers (non-global)
+    // ────────────────────────────────────────────────────────────────
+    const drawRect = (doc, color, x, y, w, h = 25, lw = 2) => {
+      doc.lineJoin("round").lineWidth(lw).strokeColor(color).rect(x, y, w, h).stroke();
+    };
+
+    const drawRoundedRect = (doc, x, y, width, height, radius = 4, color = BORDER_BLUE, bFill) => {
+      doc.lineJoin("round").lineWidth(2).strokeColor(color);
+      doc.roundedRect(x, y, width, height, radius)
+
+      if (bFill) {
+        doc.fillAndStroke(color, color);
+      } else {
+        doc.stroke();
+      }
+    };
+
+    const drawText = (doc, text, x, y, opts = {}) => {
+      doc.font(opts.bold ? "Helvetica-Bold" : "Helvetica")
+        .fontSize(opts.size || 10)
+        .fillColor(opts.color || TEXT_DARK)
+        .text(text, x, y, {
+          width: opts.width || 200,
+          align: opts.align || "left",
+          characterSpacing: -0.2,
+          wordSpacing: -0.4,
+          link: opts.link
+        });
+    };
+
+    const drawImage = (doc, img, x, y, w = 282, h = 212, radius = 4, commentText = "No Comments") => {
+      if (!img) return;
+      doc.save();
+      doc.roundedRect(x, y, w, h, radius).clip();
+      doc.image(`data:image/jpg;base64,${img}`, x, y, { width: w, height: h });
+      doc.restore();
+      drawText(doc, commentText, x, y + h + 6, { size: 9, width: w });
+    };
+
     //--------------------------------------------------------------
     // 🧩 COMMON HELPER — Footer + Layout + Page Setup
     //--------------------------------------------------------------
@@ -33,11 +89,11 @@ sap.ui.define([],
     } = {}) {
 
       // Draw footer separator line
-      doc.lineWidth(1)
+      doc.lineWidth(2)
         .moveTo(footerLineStart, doc.page.height - 28)
         .lineTo(doc.page.width - footerLineEnd, doc.page.height - 28)
         .stroke()
-        .fillColor("#00529B")
+        .fillColor(BORDER_BLUE)
         .font(font)
         .fontSize(10);
 
@@ -63,7 +119,7 @@ sap.ui.define([],
       }
 
       // Reset default fill + cursor position
-      doc.fillColor("#121E28");
+      doc.fillColor(TEXT_DARK);
       doc.x = margins.left + 5;
       doc.y = margins.top;
     }
@@ -179,15 +235,10 @@ sap.ui.define([],
           jsonData = JSON.parse(JSON.stringify(jsonData));
 
           let header = (doc, logo) => {
+
             let xPoint = doc.page.margins.left;
             let yPoint = doc.page.margins.top;
-            var xPointH = 40,
-              yPointH = 110,
-              xPointCol1 = 40,
-              yPointCol1 = 125,
-              xPointCol2 = 282,
-              yPointCol2 = 125;
-            that.createFirstPageInfo(doc, jsonData, logo, reportName, xPoint, yPoint, xPointH, yPointH, xPointCol1, yPointCol1, xPointCol2, yPointCol2);
+            that.createFirstPageInfo(doc, jsonData, logo, reportName, xPoint, yPoint);
 
             addPage(doc, page += 1);
             const fullWidth = doc.page.width - 90;
@@ -197,16 +248,11 @@ sap.ui.define([],
             let rectX = 45;
             let rectY = 45;
 
-            // Draw "Report Summary" box border only
-            doc.lineJoin("round")
-              .lineWidth(3)
-              .strokeColor("#00529B")
-              .rect(xPointH, rectY - 25, fullWidth, 35)
-              .stroke();
+            drawRoundedRect(doc, xPointH, rectY - 25, fullWidth, 35, 4, BORDER_BLUE);
 
             doc.fontSize(18)
               .font("Helvetica-Bold")
-              .fillColor("#00529B")
+              .fillColor(BORDER_BLUE)
               .text("Report Summary", rectX, rectY - 15, {
                 width: doc.page.width - 100,
                 align: "left",
@@ -223,13 +269,9 @@ sap.ui.define([],
               // Helper: Draw header bar (blue/orange)
               //--------------------------------------------------------------
               const drawHeader = (color, title, textY, prefix = "") => {
-                doc.lineJoin("round")
-                  .lineWidth(3)
-                  .strokeColor(color)
-                  .rect(xPointH, textY - 20, doc.page.width - 90, 25)
-                  .fillAndStroke(color, color);
+                drawRoundedRect(doc, xPointH, textY - 20, doc.page.width - 90, 25, 4, color, true);
 
-                doc.fontSize(color === "#00529B" ? 14 : 13)
+                doc.fontSize(color === BORDER_BLUE ? 14 : 13)
                   .font("Helvetica-Bold")
                   .fillColor("white")
                   .text(`${prefix}${title}`, rectX, textY - 12, {
@@ -249,23 +291,19 @@ sap.ui.define([],
                 const colWidths = [tableWidth * 0.6, tableWidth * 0.4];
                 const rowHeight = 22;
 
-                doc.lineJoin("round")
-                  .lineWidth(3)
-                  .strokeColor("#00529B")
-                  .rect(tableX, rectY - 5, tableWidth, rowHeight)
-                  .stroke();
+                drawRoundedRect(doc, tableX, rectY - 5, tableWidth, rowHeight, 4, BORDER_BLUE);
 
                 // Vertical divider
                 doc.lineJoin("round")
-                  .lineWidth(3)
-                  .strokeColor("#00529B")
+                  .lineWidth(2)
+                  .strokeColor(BORDER_BLUE)
                   .rect(tableX + colWidths[0], rectY - 5, 0.5, rowHeight)
                   .stroke();
 
                 // Text
                 doc.font("Helvetica")
                   .fontSize(10)
-                  .fillColor("#121E28")
+                  .fillColor(TEXT_DARK)
                   .text(label, rectX, rectY + 2, {
                     width: colWidths[0] - 12,
                     align: "left",
@@ -286,7 +324,7 @@ sap.ui.define([],
               // 🔵 BUILDING HEADER BAR
               //--------------------------------------------------------------
               rectY += 35;
-              drawHeader("#00529B", building.building_name, rectY, "Building: ");
+              drawHeader(BORDER_BLUE, building.building_name, rectY, "Building: ");
 
               rectY += 15;
               drawSummaryRow("Building Inspections", `${building.building_inspection_dfct_cnt || "0"} Defects`);
@@ -297,7 +335,7 @@ sap.ui.define([],
               //--------------------------------------------------------------
               (building.sections || []).forEach((section) => {
                 rectY += 25;
-                drawHeader("#F4A20B", section.section_name, rectY, "Section: ");
+                drawHeader(BORDER_ORANGE, section.section_name, rectY, "Section: ");
                 rectY += 15;
 
                 drawSummaryRow("Section Inspections", `${section.section_inspection_dfct_cnt || "0"} Defects`);
@@ -324,35 +362,7 @@ sap.ui.define([],
             //--------------------------------------------------------------
             // 🏢 LOOP THROUGH EACH BUILDING ENTRY
             //--------------------------------------------------------------
-            jsonData.buildings.forEach((building) => {
-              // ────────────────────────────────────────────────────────────────
-              // 🧩 Local helpers (non-global)
-              // ────────────────────────────────────────────────────────────────
-              const drawRect = (color, x, y, w, h = 25, lw = 3) => {
-                doc.lineJoin("round").lineWidth(lw).strokeColor(color).rect(x, y, w, h).stroke();
-              };
-
-              const drawText = (text, x, y, opts = {}) => {
-                doc.font(opts.bold ? "Helvetica-Bold" : "Helvetica")
-                  .fontSize(opts.size || 10)
-                  .fillColor(opts.color || "#121E28")
-                  .text(text, x, y, {
-                    width: opts.width || 200,
-                    align: opts.align || "left",
-                    characterSpacing: -0.2,
-                    wordSpacing: -0.4,
-                    link: opts.link
-                  });
-              };
-
-              const drawImage = (img, x, y, w = 282, h = 212, radius = 4, commentText = "This is a sample photo comment.") => {
-                if (!img) return;
-                doc.save();
-                doc.roundedRect(x, y, w, h, radius).clip();
-                doc.image(`data:image/jpg;base64,${img}`, x, y, { width: w, height: h });
-                doc.restore();
-                drawText(commentText, x, y + h + 6, { size: 9, width: w });
-              };
+            (jsonData.buildings || []).forEach((building) => {
 
               // ────────────────────────────────────────────────────────────────
               // 📄 PAGE CHECKER
@@ -362,9 +372,9 @@ sap.ui.define([],
               // ────────────────────────────────────────────────────────────────
               // 🏠 BUILDING HEADER
               // ────────────────────────────────────────────────────────────────
-              drawRect("#00529B", xPointH, (rectY += 27) - 25, doc.page.width - 90);
-              drawText(`Building: ${building.name}`, rectX, rectY - 17, {
-                bold: true, size: 14, color: "#00529B", width: doc.page.width - 120
+              drawRoundedRect(doc, xPointH, (rectY += 27) - 25, doc.page.width - 90, 25, 4, BORDER_BLUE);
+              drawText(doc, `Building: ${building.name}`, rectX, rectY - 17, {
+                bold: true, size: 14, color: BORDER_BLUE, width: doc.page.width - 120
               });
 
               // 🔗 Building Aerial Photo Button
@@ -372,9 +382,9 @@ sap.ui.define([],
                 const [btnWidth, btnHeight, radius] = [180, 15, 6];
                 const btnX = doc.page.width - btnWidth - 54, btnY = rectY - 20;
                 doc.save();
-                doc.roundedRect(btnX, btnY, btnWidth, btnHeight, radius).fill("#00529B");
+                doc.roundedRect(btnX, btnY, btnWidth, btnHeight, radius).fill(BORDER_BLUE);
                 doc.restore();
-                drawText("Building Aerial View Photo", btnX, btnY + 4, {
+                drawText(doc, "Building Aerial View Photo", btnX, btnY + 4, {
                   bold: true, size: 10, color: "white", width: btnWidth, align: "center", link: building.aerial_photo_url
                 });
               }
@@ -382,9 +392,9 @@ sap.ui.define([],
               // ────────────────────────────────────────────────────────────────
               // 🟧 BUILDING COMMENTS
               // ────────────────────────────────────────────────────────────────
-              drawRect("#F4A20B", xPointH, (rectY += 25) - 20, doc.page.width - 90);
-              drawText("Comments", rectX, rectY - 13, { bold: true, size: 14, color: "#F4A20B" });
-              drawText(building.building_comments || "No comments provided.", rectX, rectY + 20, {
+              drawRoundedRect(doc, xPointH, (rectY += 25) - 20, doc.page.width - 90, 25, 4, BORDER_ORANGE);
+              drawText(doc, "Comments", rectX, rectY - 13, { bold: true, size: 12, color: BORDER_ORANGE });
+              drawText(doc, building.comments || "No comments provided.", rectX, rectY + 20, {
                 size: 10, width: doc.page.width - 90
               });
 
@@ -392,8 +402,8 @@ sap.ui.define([],
               // 🏗️ BUILDING PHOTO
               // ────────────────────────────────────────────────────────────────
               const photoHeaderY = doc.y + 10;
-              drawRect("#F4A20B", xPointH, photoHeaderY, doc.page.width - 90);
-              drawText("Building Photo(s)", rectX, photoHeaderY + 8, { bold: true, size: 14, color: "#F4A20B" });
+              drawRoundedRect(doc, xPointH, photoHeaderY, doc.page.width - 90, 25, 4, BORDER_ORANGE);
+              drawText(doc, "Building Photo(s)", rectX, photoHeaderY + 8, { bold: true, size: 12, color: BORDER_ORANGE });
               if (building.photos?.length) {
                 const photoWidth = 257;
                 const photoHeight = 172;
@@ -401,10 +411,10 @@ sap.ui.define([],
                 const photosPerRow = 2;
 
                 let x = xPointH;
-                let y = photoHeaderY + 35;
+                let y = photoHeaderY + 30;
                 let photoCount = 0;
 
-                building.photos.forEach((photo, index) => {
+                (building.photos || []).forEach((photo, index) => {
                   // 🧾 Page break if image exceeds bottom margin
                   if (y + photoHeight + 60 > doc.page.height - 45) {
                     addPage(doc, page += 1);
@@ -413,14 +423,14 @@ sap.ui.define([],
                   }
 
                   // 🖼️ Draw the photo (use your helper)
-                  drawImage(
+                  drawImage(doc,
                     photo.photo,
                     x,
                     y,
                     photoWidth,
                     photoHeight,
                     8,
-                    photo.comment || "This is a sample photo comment."
+                    photo.comments || "No Comments"
                   );
 
                   photoCount++;
@@ -441,23 +451,9 @@ sap.ui.define([],
               rectY = 45;  // Starting Y position
               addPage(doc, page += 1); // Create the first page
 
-              //--------------------------------------------------------------
-              // 🧱 Common Helpers
-              //--------------------------------------------------------------
-              const BORDER_BLUE = "#00529B";
-              const BORDER_GREEN = "#5AA755";
-              const BORDER_RED = "#C4222F";
-              const BORDER_ORANGE = "#F4A20B";
-              const TEXT_DARK = "#121E28";
-
-              const drawRoundedRect = (x, y, width, height, radius = 4, color = BORDER_BLUE) => {
-                doc.lineJoin("round").lineWidth(3).strokeColor(color);
-                doc.roundedRect(x, y, width, height, radius).stroke();
-              };
-
               const drawHeaderBar = (title, y) => {
                 const fullWidth = doc.page.width - 90;
-                drawRoundedRect(xPointH, y - 20, fullWidth, 25, 3, BORDER_BLUE);
+                drawRoundedRect(doc, xPointH, y - 20, fullWidth, 25, 4, BORDER_BLUE);
                 doc.font("Helvetica-Bold").fontSize(14).fillColor(BORDER_BLUE)
                   .text(title, rectX, y - 13, {
                     width: fullWidth, align: "left", characterSpacing: -0.2,
@@ -469,20 +465,18 @@ sap.ui.define([],
                 const fullWidth = doc.page.width - 90;
                 const tableX = xPointH;
 
-                // Blue background header
-                doc.lineJoin("round").lineWidth(3).strokeColor(BORDER_BLUE)
-                  .rect(tableX, y, fullWidth, 25)
-                  .fillAndStroke(BORDER_BLUE, BORDER_BLUE);
-
-                doc.font("Helvetica-Bold").fontSize(12).fillColor("white");
+                // Blue background header (filled rounded rect)
+                drawRoundedRect(doc, tableX, y, fullWidth, 25, 4, BORDER_BLUE, true);
 
                 let x = rectX;
-                headers.forEach((h, i) => {
-                  doc.text(h, x, y + 6, {
+
+                (headers || []).forEach((h, i) => {
+                  drawText(doc, h, x, y + 6, {
+                    bold: true,
+                    size: 12,
+                    color: "white",
                     width: colWidths[i],
-                    align: h === "Rating" ? "center" : "left",
-                    characterSpacing: -0.2,
-                    wordSpacing: -0.4
+                    align: h === "Rating" ? "center" : "left"
                   });
                   x += colWidths[i];
                 });
@@ -495,55 +489,47 @@ sap.ui.define([],
                 const rowHeight = 22;
 
                 // Outline row
-                doc.lineWidth(3).strokeColor(BORDER_BLUE).rect(tableX, y, fullWidth, rowHeight).stroke();
+                drawRoundedRect(doc, tableX, y, fullWidth, rowHeight, 4, BORDER_BLUE, false);
 
                 // Internal vertical lines
                 let x = rectX;
                 for (let i = 0; i < colWidths.length - 1; i++) {
                   x += colWidths[i];
-                  doc.moveTo(x, y).lineTo(x, y + rowHeight).stroke();
-                }
 
-                doc.font("Helvetica").fontSize(10).fillColor(TEXT_DARK);
+                  // vertical line = roundedRect with width=1
+                  drawRoundedRect(doc, x, y, 1, rowHeight, 1, BORDER_BLUE, false);
+                }
 
                 if (withRating) {
                   const [rating, comp, defect] = values;
                   const ratingColor = rating === "RN" ? BORDER_RED : BORDER_GREEN;
                   const symbol = rating === "RN" ? "RN" : "ND";
 
-                  // Rating circle
-                  doc.circle(tableX + colWidths[0] / 2, y + rowHeight / 2, 7)
-                    .fillAndStroke(ratingColor, ratingColor);
-                  doc.font("Helvetica-Bold").fontSize(10).fillColor("white")
-                    .text(symbol, tableX, y + 7, {
-                      width: colWidths[0],
-                      align: "center",
-                      characterSpacing: -0.2,
-                      wordSpacing: -0.4
-                    });
+                  // Rating “circle” using roundedRect (PDFKit alternative)
+                  drawRoundedRect(doc, tableX + colWidths[0] / 2 - 7, y + rowHeight / 2 - 7, 14, 14, 7, ratingColor, true);
 
-                  // Text columns
-                  doc.font("Helvetica").fillColor(TEXT_DARK);
-                  doc.text(comp || "", tableX + colWidths[0] + 10, y + 7, {
-                    width: colWidths[1] - 20,
-                    align: "left",
-                    characterSpacing: -0.2,
-                    wordSpacing: -0.4
+                  // Symbol inside circle
+                  drawText(doc, symbol, tableX, y + 5, { bold: true, size: 10, color: "white", width: colWidths[0], align: "center" });
+
+                  // Component text
+                  drawText(doc, comp || "", tableX + colWidths[0] + 10, y + 5, {
+                    size: 10,
+                    width: colWidths[1] - 20
                   });
-                  doc.text(defect || "", tableX + colWidths[0] + colWidths[1] + 10, y + 7, {
-                    width: colWidths[2] - 20,
-                    align: "left",
-                    characterSpacing: -0.2,
-                    wordSpacing: -0.4
+
+                  // Defect text
+                  drawText(doc, defect || "", tableX + colWidths[0] + colWidths[1] + 10, y + 5, {
+                    size: 10,
+                    width: colWidths[2] - 20
                   });
+
                 } else {
                   let textX = rectX;
-                  values.forEach((v, i) => {
-                    doc.text(v || "", textX, y + 7, {
-                      width: colWidths[i] - 20,
-                      align: "left",
-                      characterSpacing: -0.2,
-                      wordSpacing: -0.4
+
+                  (values || []).forEach((v, i) => {
+                    drawText(doc, v || "", textX, y + 5, {
+                      size: 10,
+                      width: colWidths[i] - 20
                     });
                     textX += colWidths[i] + 5;
                   });
@@ -565,9 +551,9 @@ sap.ui.define([],
                 ];
 
                 drawTableHeader(["Component", "Type"], specCols, rectY);
-                rectY += 25;
+                rectY += 30;
 
-                building.specification_matrix.forEach(row => {
+                (building.specification_matrix || []).forEach(row => {
                   rectY += drawTableRow([row.component, row.type], specCols, rectY);
                 });
               }
@@ -587,9 +573,9 @@ sap.ui.define([],
                 ];
 
                 drawTableHeader(["Rating", "Component", "Defect"], inspCols, rectY);
-                rectY += 25;
+                rectY += 30;
 
-                building.inspection_matrix.forEach(row => {
+                (building.inspection_matrix || []).forEach(row => {
                   rectY += drawTableRow([row.rating, row.component, row.defect], inspCols, rectY, { withRating: true });
                 });
 
@@ -619,19 +605,21 @@ sap.ui.define([],
               // 🧱 Building Inspections
               //--------------------------------------------------------------
               if (building.inspections) {
+
                 addPage(doc, page += 1);
                 rectX = 45;
                 rectY = 45;
 
-                // 🔵 Header Rectangle
-                drawRect("#00529B", xPointH, rectY - 25, doc.page.width - 90, 35, 3, true);
+                // 🔵 Header Rectangle (rounded)
+                drawRoundedRect(doc, xPointH, rectY - 25, doc.page.width - 90, 35, 4, BORDER_BLUE, false);
 
                 // 🏷️ Header Text
-                drawText(`Building Inspections for ${building.name || ""}`, rectX, rectY - 15, {
-                  bold: true, size: 18, color: "#00529B", width: doc.page.width - 90
+                drawText(doc, `Building Inspections for ${building.name || ""}`, rectX, rectY - 15, {
+                  bold: true, size: 18, color: BORDER_BLUE, width: doc.page.width - 90
                 });
 
-                building.inspections.forEach(inspection => {
+                (building.inspections || []).forEach(inspection => {
+
                   if (addPage(doc, page += 1, 270)) {
                     rectY = doc.y - 40;
                   } else {
@@ -639,39 +627,86 @@ sap.ui.define([],
                   }
 
                   rectY += 15;
-                  // 🔵 Header Rectangle
-                  drawRect("#F4A20B", xPointH, rectY, doc.page.width - 90, 25, 3, true);
 
+                  // 🔶 Activity Header Bar
+                  drawRoundedRect(doc, xPointH, rectY, doc.page.width - 90, 25, 4, BORDER_ORANGE, false);
                   rectY += 20;
-                  // 🏷️ inspection desctiption Text
-                  drawText(`${inspection.activity || ""}`, rectX, rectY - 12, {
-                    bold: true, size: 14, color: "#F4A20B", width: doc.page.width - 90
+
+                  // Activity text
+                  drawText(
+                    doc,
+                    `${inspection.activity || ""} : ${inspection.selections?.[0]?.selection || ""}`,
+                    rectX,
+                    rectY - 12,
+                    { bold: true, size: 14, color: BORDER_ORANGE, width: doc.page.width - 90 }
+                  );
+
+                  rectY += 10;
+
+                  // 🔶 Comments header bar
+                  drawRoundedRect(doc, xPointH, rectY, doc.page.width - 90, 20, 4, BORDER_ORANGE, false);
+                  rectY += 20;
+
+                  drawText(doc, `Comments`, rectX, rectY - 15, {
+                    bold: true, size: 12, color: BORDER_ORANGE, width: doc.page.width - 90
                   });
 
                   rectY += 10;
-                  // 🔵 Header Rectangle
-                  drawRect("#F4A20B", xPointH, rectY, doc.page.width - 90, 20, 3, true);
-                  rectY += 20;
-                  // 🏷️ inspection desctiption Text
-                  drawText(`Comments`, rectX, rectY - 15, {
-                    bold: true, size: 12, color: "#F4A20B", width: doc.page.width - 90
-                  });
-                  rectY += 10;
-                  drawText(inspection.comments || "No comments provided.", rectX, rectY, {
+
+                  // Comments
+                  drawText(doc, inspection.comments || "No comments provided.", rectX, rectY, {
                     size: 10, width: doc.page.width - 90
                   });
+
                   rectY += 15;
-                  // 🔵 Header Rectangle
-                  drawRect("#F4A20B", xPointH, rectY, doc.page.width - 90, 20, 3, true);
+
+                  // 🔶 Photos header bar
+                  drawRoundedRect(doc, xPointH, rectY, doc.page.width - 90, 20, 4, BORDER_ORANGE, false);
                   rectY += 20;
-                  // 🏷️ inspection desctiption Text
-                  drawText(`Photo(s)`, rectX, rectY - 15, {
-                    bold: true, size: 12, color: "#F4A20B", width: doc.page.width - 90
+
+                  drawText(doc, `Photo(s)`, rectX, rectY - 15, {
+                    bold: true, size: 12, color: BORDER_ORANGE, width: doc.page.width - 90
                   });
-                  rectY += 10
-                  if (inspection.inspection_photo) {
-                    drawImage(inspection.inspection_photo, xPointH, rectY, 282, 212, 8);
-                    rectY = rectY + 30 + 212 + 20;
+
+                  rectY += 10;
+
+                  // 🖼️ Photos grid
+                  if (inspection.photos?.length) {
+
+                    const photoWidth = 257;
+                    const photoHeight = 172;
+                    const gapX = 10;
+                    const gapY = 20;
+                    const perRow = 2;
+
+                    let x = xPointH;
+                    let y = rectY;
+                    let count = 0;
+
+                    (inspection.photos || []).forEach(photo => {
+
+                      // Page break check
+                      if (y + photoHeight > doc.page.height) {
+                        addPage(doc, page += 1);
+                        x = xPointH;
+                        y = 45;
+                      }
+
+                      // Image
+                      drawImage(doc, photo.photo, x, y, photoWidth, photoHeight, 8, photo.comments || "No Comments");
+
+                      count++;
+
+                      if (count % perRow === 0) {
+                        x = xPointH;
+                        y += photoHeight + gapY;
+                      } else {
+                        x += photoWidth + gapX;
+                      }
+                    });
+
+                    const totalRows = Math.ceil(inspection.photos.length / perRow);
+                    rectY = rectY + (photoHeight + gapY) * totalRows - gapY + 10;
                   }
                 });
               }
@@ -687,34 +722,72 @@ sap.ui.define([],
                   rectX = 45; rectY = 45; addPage(doc, page += 1);
 
                   // SECTION HEADER
-                  drawRect("#00529B", xPointH, rectY - 25, doc.page.width - 90);
-                  drawText(`Section: ${section.name}`, rectX, rectY - 17, {
-                    bold: true, size: 14, color: "#00529B", width: doc.page.width - 120
+                  drawRoundedRect(doc, xPointH, rectY - 25, doc.page.width - 90, 25, 4, BORDER_BLUE);
+                  drawText(doc, `Section: ${section.name}`, rectX, rectY - 17, {
+                    bold: true, size: 14, color: BORDER_BLUE, width: doc.page.width - 120
                   });
 
                   if (section.aerial_photo_url) {
                     const [btnWidth, btnHeight, radius] = [180, 15, 6];
                     const btnX = doc.page.width - btnWidth - 54, btnY = rectY - 20;
-                    doc.save(); doc.roundedRect(btnX, btnY, btnWidth, btnHeight, radius).fill("#00529B"); doc.restore();
-                    drawText("Section Aerial View Photo", btnX, btnY + 4, {
+                    doc.save(); doc.roundedRect(btnX, btnY, btnWidth, btnHeight, radius).fill(BORDER_BLUE); doc.restore();
+                    drawText(doc, "Section Aerial View Photo", btnX, btnY + 4, {
                       bold: true, size: 10, color: "white", width: btnWidth, align: "center", link: section.aerial_photo_url
                     });
                   }
 
                   // COMMENTS
-                  drawRect("#F4A20B", xPointH, (rectY += 25) - 20, doc.page.width - 90);
-                  drawText("Comments", rectX, rectY - 13, { bold: true, size: 14, color: "#F4A20B" });
-                  drawText(section.comments || "No comments provided.", rectX, rectY + 20, {
+                  drawRoundedRect(doc, xPointH, (rectY += 25) - 20, doc.page.width - 90, 25, 4, BORDER_ORANGE);
+                  drawText(doc, "Comments", rectX, rectY - 13, { bold: true, size: 12, color: BORDER_ORANGE });
+                  drawText(doc, section.comments || "No comments provided.", rectX, rectY + 20, {
                     size: 10, width: doc.page.width - 90
                   });
 
                   // SECTION PHOTO
                   const photoY = doc.y + 10;
-                  drawRect("#F4A20B", xPointH, photoY, doc.page.width - 90);
-                  drawText("Section Overview Photo", rectX, photoY + 8, { bold: true, size: 14, color: "#F4A20B" });
-                  if (section.section_overview_photo) {
-                    drawImage(section.section_overview_photo, xPointH, photoY + 35);
-                    rectY = photoY + 35 + 212 + 15;
+                  drawRoundedRect(doc, xPointH, photoY, doc.page.width - 90, 25, 4, BORDER_ORANGE);
+                  drawText(doc, "Section Overview Photo", rectX, photoY + 8, { bold: true, size: 12, color: BORDER_ORANGE });
+                  if (section.photos?.length) {
+                    const photoWidth = 257;
+                    const photoHeight = 172;
+                    const gap = 10;
+                    const photosPerRow = 2;
+
+                    let x = xPointH;
+                    let y = photoY + 35;
+                    let photoCount = 0;
+
+                    (section.photos || []).forEach((photo, index) => {
+                      // 🧾 Page break if image exceeds bottom margin
+                      if (y + photoHeight + 60 > doc.page.height - 45) {
+                        addPage(doc, page += 1);
+                        y = 45; // reset Y same as initial base
+                        x = xPointH;
+                      }
+
+                      // 🖼️ Draw the photo (use your helper)
+                      drawImage(doc,
+                        photo.photo,
+                        x,
+                        y,
+                        photoWidth,
+                        photoHeight,
+                        8,
+                        photo.comments || "No Comments"
+                      );
+
+                      photoCount++;
+                      if (photoCount % photosPerRow === 0) {
+                        // move to next row
+                        x = xPointH;
+                        y += photoHeight + 35;
+                      } else {
+                        // move to next column
+                        x += photoWidth + gap;
+                      }
+                    });
+
+                    rectY = y + photoHeight + 15; // keep rectY consistent
                   }
 
                   //--------------------------------------------------------------
@@ -737,9 +810,9 @@ sap.ui.define([],
                     ];
 
                     drawTableHeader(["Component", "Type"], specCols, rectY);
-                    rectY += 25;
+                    rectY += 30;
 
-                    section.specification_matrix.forEach(row => {
+                    (section.specification_matrix || []).forEach(row => {
                       rectY += drawTableRow([row.component, row.type], specCols, rectY);
                     });
                   }
@@ -747,7 +820,7 @@ sap.ui.define([],
                   //--------------------------------------------------------------
                   // 🧱 Maintenance Activity Matrix
                   //--------------------------------------------------------------
-                  if (section.maintenance_activity_matrix?.length) {
+                  if (section.maint_act_matrix?.length) {
                     rectY += 45;
                     drawHeaderBar("Maintenance Activity Matrix", rectY);
                     rectY += 10;
@@ -761,7 +834,7 @@ sap.ui.define([],
                     drawTableHeader(["Rating", "Component", "Defect"], maintCols, rectY);
                     rectY += 25;
 
-                    section.maintenance_activity_matrix.forEach(row => {
+                    (section.maint_act_matrix || []).forEach(row => {
                       rectY += drawTableRow([row.rating, row.component, row.defect], maintCols, rectY, { withRating: true });
                     });
 
@@ -809,10 +882,10 @@ sap.ui.define([],
 
                     // Table Header
                     drawTableHeader(["Rating", "Component", "Defect"], inspCols, rectY);
-                    rectY += 25;
+                    rectY += 30;
 
                     // Table Rows
-                    section.inspection_matrix.forEach(row => {
+                    (section.inspection_matrix || []).forEach(row => {
                       rectY += drawTableRow(
                         [row.rating, row.component, row.defect],
                         inspCols,
@@ -845,115 +918,180 @@ sap.ui.define([],
                     rectY = legendY + 25;
                   }
 
-                  // --------------------------------------------------------------
-                  // 🏗️ Section Inspections
-                  // --------------------------------------------------------------
-                  if (section.section_inspections?.length) {
+                  //--------------------------------------------------------------
+                  // 🏗️ SECTION INSPECTIONS (FINAL + PAGE-SAFE)
+                  //--------------------------------------------------------------
+                  if (section.inspections?.length) {
+
                     rectX = 45;
                     rectY = 45;
                     addPage(doc, page += 1);
 
-                    // 🔹 Header: Inspections for Section
-                    drawRoundedRect(xPointH, rectY, doc.page.width - 90, 35, 3, BORDER_BLUE);
+                    //--------------------------------------------------------------
+                    // 🔵 Header: Inspections for Section
+                    //--------------------------------------------------------------
+                    drawRoundedRect(doc, xPointH, rectY, doc.page.width - 90, 35, 4, BORDER_BLUE);
                     doc.font("Helvetica-Bold").fontSize(18).fillColor(BORDER_BLUE)
-                      .text(`Inspections for section: ${section.name}` || "", rectX, rectY + 9);
+                      .text(`Inspections for section: ${section.name}`, rectX, rectY + 9);
+
                     rectY += 40;
 
-                    // 🔍 Loop through each inspection item
-                    section.section_inspections.forEach((insp, idx) => {
-                      if (addPage(doc, page += 1, 400)) rectY = doc.y; else page -= 1;
+                    //--------------------------------------------------------------
+                    // 🔁 LOOP through each INSPECTION
+                    //--------------------------------------------------------------
+                    (section.inspections || []).forEach((insp) => {
 
+                      //-------------------------------------------------------------------
+                      // 📌 1️⃣ Calculate TOTAL HEIGHT required for this entire inspection
+                      //-------------------------------------------------------------------
+                      const photoRows = insp.photos?.length ? Math.ceil(insp.photos.length / 2) : 0;
+                      const photoBlockHeight = photoRows * (172 + 20); // (height + gap)
+
+                      const descriptionHeight = 45;
+                      const commentsHeight = insp.comments ? 45 : 0;
+                      const headerHeight = 30;
+                      const photoHeaderHeight = 35;
+
+                      const totalBlockHeight =
+                        headerHeight +
+                        descriptionHeight +
+                        commentsHeight +
+                        photoHeaderHeight +
+                        photoBlockHeight +
+                        40;
+
+                      //-------------------------------------------------------------------
+                      // 📌 2️⃣ PAGE BREAK: Move whole block to next page if it won't fit
+                      //-------------------------------------------------------------------
+                      if (rectY + totalBlockHeight > doc.page.height - 60) {
+                        addPage(doc, page += 1);
+                        rectY = 45;
+                      }
+
+                      //-------------------------------------------------------------------
+                      // 🟢🔴 3️⃣ INSPECTION TITLE BAR
+                      //-------------------------------------------------------------------
                       const isRepair = insp.rating === "RN";
                       const color = isRepair ? BORDER_RED : BORDER_GREEN;
                       const symbol = isRepair ? "RN" : "ND";
 
-                      // 🟢🔴 Inspection Title
-                      drawRoundedRect(xPointH, rectY, doc.page.width - 90, 25, 3, color);
-                      doc.circle(rectX + 7, rectY + 12, 8).fillAndStroke(color, color);
+                      drawRoundedRect(doc, xPointH, rectY, doc.page.width - 90, 25, 4, color);
+
+                      doc.circle(rectX + 9, rectY + 12, 8).fillAndStroke(color, color);
                       doc.font("Helvetica-Bold").fontSize(11).fillColor("white")
-                        .text(symbol, rectX, rectY + 7);
+                        .text(symbol, rectX + 2, rectY + 7);
+
                       doc.font("Helvetica-Bold").fontSize(13).fillColor(color)
-                        .text(`${insp.component || ""} : ${insp.defect || (isRepair ? "Repair Needed" : "No Defects")}`,
-                          rectX + 17, rectY + 7);
+                        .text(`${insp.activity} : ${insp.selections[0].selection}`,
+                          rectX + 22,
+                          rectY + 7
+                        );
+
                       rectY += 30;
 
-                      // 🟠 Description
-                      drawRoundedRect(xPointH, rectY, doc.page.width - 90, 22, 3, BORDER_ORANGE);
+                      //-------------------------------------------------------------------
+                      // 🟠 4️⃣ DESCRIPTION HEADER
+                      //-------------------------------------------------------------------
+                      drawRoundedRect(doc, xPointH, rectY, doc.page.width - 90, 22, 4, BORDER_ORANGE);
                       doc.font("Helvetica-Bold").fontSize(12).fillColor(BORDER_ORANGE)
-                        .text("Description:", rectX, rectY + 7);
-                      rectY += 30;
+                        .text("Description:", rectX, rectY + 6);
+
+                      rectY += 28;
 
                       doc.font("Helvetica").fontSize(10).fillColor(TEXT_DARK)
-                        .text(insp.description || "—", rectX, rectY, {
-                          width: doc.page.width - 90,
-                          align: "left",
-                          characterSpacing: -0.2,
-                          wordSpacing: -0.4
+                        .text(insp.selections[0].description || "—", rectX, rectY, {
+                          width: doc.page.width - 90
                         });
-                      rectY = doc.y + 5;
 
-                      // 🟠 Comments (if present)
-                      if (insp.comments = "X") {
-                        drawRoundedRect(xPointH, rectY, doc.page.width - 90, 22, 3, BORDER_ORANGE);
+                      rectY = doc.y + 10;
+
+                      //-------------------------------------------------------------------
+                      // 🟠 5️⃣ COMMENTS (ONLY IF PRESENT)
+                      //-------------------------------------------------------------------
+                      if (insp.comments && insp.comments !== "-" && insp.comments !== "—") {
+
+                        drawRoundedRect(doc, xPointH, rectY, doc.page.width - 90, 22, 4, BORDER_ORANGE);
                         doc.font("Helvetica-Bold").fontSize(12).fillColor(BORDER_ORANGE)
-                          .text("Comments:", rectX, rectY + 7);
-                        rectY += 30;
+                          .text("Comments:", rectX, rectY + 6);
+
+                        rectY += 28;
+
                         doc.font("Helvetica").fontSize(10).fillColor(TEXT_DARK)
                           .text(insp.comments, rectX, rectY, {
-                            width: doc.page.width - 90,
-                            align: "left",
-                            characterSpacing: -0.2,
-                            wordSpacing: -0.4
+                            width: doc.page.width - 90
                           });
-                        rectY = doc.y + 5;
-                      }
 
-                      // 🟠 Photo(s)
-                      if (insp.inspection_photo) {
-                        drawRoundedRect(xPointH, rectY, doc.page.width - 90, 22, 3, BORDER_ORANGE);
-                        doc.font("Helvetica-Bold").fontSize(12).fillColor(BORDER_ORANGE)
-                          .text("Photo(s):", rectX, rectY + 7);
-                        rectY += 30;
-
-                        doc.save();
-                        const imgWidth = 240;
-                        const imgHeight = 180;
-                        doc.roundedRect(rectX, rectY, imgWidth, imgHeight, 5).clip();
-                        doc.image(`data:image/jpeg;base64,${insp.inspection_photo}`, rectX, rectY, {
-                          width: imgWidth,
-                          height: imgHeight
-                        });
-                        doc.restore();
-                        rectY += imgHeight + 10;
-
-                        doc.font("Helvetica").fontSize(9).fillColor(TEXT_DARK)
-                          .text(insp.photo_comment || "This is a sample photo comment.",
-                            rectX, rectY, { width: imgWidth });
                         rectY = doc.y + 10;
                       }
 
-                      // Add space before next inspection block
-                      rectY += 10;
+                      //-------------------------------------------------------------------
+                      // 🟠 6️⃣ PHOTO(S) HEADER
+                      //-------------------------------------------------------------------
+                      drawRoundedRect(doc, xPointH, rectY, doc.page.width - 90, 22, 4, BORDER_ORANGE);
+                      doc.font("Helvetica-Bold").fontSize(12).fillColor(BORDER_ORANGE)
+                        .text("Photo(s)", rectX, rectY + 6);
+
+                      rectY += 30;
+
+                      //-------------------------------------------------------------------
+                      // 🖼️ 7️⃣ PHOTO GRID (2 per row)
+                      //-------------------------------------------------------------------
+                      if (insp.photos?.length) {
+
+                        const photoWidth = 257;
+                        const photoHeight = 172;
+                        const gapX = 10;
+                        const gapY = 20;
+
+                        let x = xPointH;
+                        let y = rectY;
+                        let count = 0;
+
+                        (insp.photos || []).forEach((photo) => {
+
+                          // Page break check
+                          if (y + photoHeight > doc.page.height) {
+                            addPage(doc, page += 1);
+                            x = xPointH;
+                            y = 45;
+                          }
+
+                          drawImage(doc, photo.photo, x, y, photoWidth, photoHeight, 8, photo.comments || "No Comments");
+                          count++;
+                          if (count % 2 === 0) {
+                            x = xPointH;
+                            y += photoHeight + gapY;
+                          } else {
+                            x += photoWidth + gapX;
+                          }
+                        });
+
+                        // Final rectY based on completed photo rows
+                        const photoRowsFinal = Math.ceil(insp.photos.length / 2);
+                        rectY = rectY + (photoRowsFinal * (photoHeight + gapY)) - gapY + 10;
+                      }
+
+                      rectY += 15; // spacing between inspection blocks
                     });
                   }
 
                   //--------------------------------------------------------------
                   // 🏗️ Maintenance Activities for Section
                   //--------------------------------------------------------------
-                  if (section.section_maint_act_defects?.length || section.section_maint_act_no_defects?.length) {
+                  if (section.maint_acts?.length) {
                     rectX = 45;
                     rectY = 45;
                     addPage(doc, page += 1);
 
                     // 🔹 Blue Header Bar
                     const headerH = 25;
-                    drawRoundedRect(xPointH, rectY, doc.page.width - 90, headerH + 25, 4, "#00529B");
-                    drawText("Maintenance Activities for section:", rectX, rectY + 10, {
-                      size: 14, color: "#00529B", bold: true, align: "left",
+                    drawRoundedRect(doc, xPointH, rectY, doc.page.width - 90, headerH + 25, 4, BORDER_BLUE);
+                    drawText(doc, "Maintenance Activities for section:", rectX, rectY + 10, {
+                      size: 14, color: BORDER_BLUE, bold: true, align: "left",
                       width: doc.page.width - 90
                     });
-                    drawText(section.name || "", rectX, rectY + 27, {
-                      size: 18, color: "#00529B", bold: true, align: "left",
+                    drawText(doc, section.name || "", rectX, rectY + 27, {
+                      size: 18, color: BORDER_BLUE, bold: true, align: "left",
                       width: doc.page.width - 90
                     });
 
@@ -966,59 +1104,67 @@ sap.ui.define([],
 
                       if (addPage(doc, page += 1, 400)) rectY = doc.y; else page -= 1;
                       // 🟧 Activity Header (outlined, no fill)
-                      const barColor = "#F4A20B";
+                      const barColor = BORDER_ORANGE;
                       const barHeight = 25;
 
                       // Draw only the border — rounded edges, thin stroke
                       doc.lineJoin("round")
-                        .lineWidth(3)
+                        .lineWidth(2)
                         .strokeColor(barColor)
                         .roundedRect(xPointH, rectY, doc.page.width - 90, barHeight, 4)
                         .stroke();
 
                       // Title text inside the bordered box
-                      drawText(`${activity.title || ""}`, xPointH + 12, rectY + 6, {
+                      drawText(doc, `${activity.activity || ""} ${activity.selections[0].selection}`, rectX, rectY + 8, {
                         size: 13,
                         color: barColor,   // orange text same as border
-                        bold: true
+                        bold: true,
+                        width: doc.page.width - 90
                       });
 
                       rectY += barHeight + 5;
 
                       // 🟠 Description Header
-                      drawRect("#F4A20B", xPointH, rectY, doc.page.width - 90, 22);
-                      drawText("Description:", rectX, rectY + 7, {
-                        size: 12, color: "#F4A20B", bold: true
+                      drawRoundedRect(doc, xPointH, rectY, doc.page.width - 90, 22, 4, BORDER_ORANGE);
+                      drawText(doc, "Description:", rectX, rectY + 7, {
+                        size: 12, color: BORDER_ORANGE, bold: true
                       });
 
                       rectY += 30;
-                      drawText(activity.description_text || "", rectX, rectY, {
-                        size: 10, color: "#121E28", width: doc.page.width - 100
+                      drawText(doc, activity.selections[0].description || "", rectX, rectY, {
+                        size: 10, color: TEXT_DARK, width: doc.page.width - 100
                       });
 
                       rectY = doc.y + 5;
 
                       // 🟠 Comments
-                      drawRect("#F4A20B", xPointH, rectY, doc.page.width - 90, 22);
-                      drawText("Comments:", rectX, rectY + 5, {
-                        size: 12, color: "#F4A20B", bold: true
+                      drawRoundedRect(doc, xPointH, rectY, doc.page.width - 90, 22, 4, BORDER_ORANGE);
+                      drawText(doc, "Comments:", rectX, rectY + 5, {
+                        size: 12, color: BORDER_ORANGE, bold: true
                       });
                       rectY += 22;
-                      drawText(activity.comments || "—", rectX, rectY + 5, {
-                        size: 10, color: "#121E28", width: doc.page.width - 100
+                      drawText(doc, activity.comments || "—", rectX, rectY + 5, {
+                        size: 10, color: TEXT_DARK, width: doc.page.width - 100
                       });
                       rectY = doc.y + 8;
 
                       // 🟠 Photo Headers
-                      drawRect("#F4A20B", xPointH, rectY, (doc.page.width - 90) / 2 - 10, 22);
-                      drawText("Defect Photo(s):", rectX, rectY + 7, {
-                        size: 12, color: "#F4A20B", bold: true
+                      drawRoundedRect(doc, xPointH, rectY, (doc.page.width - 90) / 2 - 10, 22, 4, BORDER_ORANGE);
+                      drawText(doc, "Defect Photo(s):", rectX, rectY + 7, {
+                        size: 12, color: BORDER_ORANGE, bold: true
                       });
-                      drawRect("#F4A20B", xPointH + (doc.page.width - 90) / 2 + 10, rectY,
-                        (doc.page.width - 90) / 2 - 10, 22);
-                      drawText("Repair Photo(s):", xPointH + (doc.page.width - 90) / 2 + 15, rectY + 7, {
-                        size: 12, color: "#F4A20B", bold: true
+                      drawRoundedRect(doc, xPointH + (doc.page.width - 90) / 2 + 10, rectY, (doc.page.width - 90) / 2 - 10, 22, 4, BORDER_ORANGE);
+                      drawText(doc, "Repair Photo(s):", xPointH + (doc.page.width - 90) / 2 + 15, rectY + 7, {
+                        size: 12, color: BORDER_ORANGE, bold: true
                       });
+
+                      if (activity.overview_photos) {
+                        // 🟠 Photo Headers
+                        drawRoundedRect(doc, xPointH, rectY + 232, (doc.page.width - 90) / 2 - 10, 22, 4, BORDER_ORANGE);
+                        drawText(doc, "Overview Photo(s):", rectX, rectY + 237, {
+                          size: 12, color: BORDER_ORANGE, bold: true
+                        });
+                      }
 
                       rectY += 28;
 
@@ -1029,15 +1175,22 @@ sap.ui.define([],
                       const rightX = xPointH + photoW + 29;
 
                       // Defect Photos
-                      if (activity.maintenance_photo) {
-                        drawImage(activity.maintenance_photo, leftX, rectY, photoW, photoH, 6,
-                          activity.maintenance_comment || "This is a sample photo comment.");
+                      if (activity.defect_photos) {
+                        drawImage(doc, activity.defect_photos[0].photo, leftX, rectY, photoW, photoH, 6,
+                          activity.comments || "No Comments");
                       }
 
                       // Repair Photos
-                      if (activity.repair_photo) {
-                        drawImage(activity.repair_photo, rightX, rectY, photoW, photoH, 6,
-                          activity.repair_comment || "This is a sample photo comment.");
+                      if (activity.repair_photos) {
+                        drawImage(doc, activity.repair_photos[0].photo, rightX, rectY, photoW, photoH, 6,
+                          activity.comments || "No Comments");
+                      }
+
+                      // Repair Photos
+                      if (activity.overview_photos) {
+                        rectY += 232;
+                        drawImage(doc, activity.overview_photos[0].photo, leftX, rectY, photoW, photoH, 6,
+                          activity.comments || "No Comments");
                       }
 
                       rectY += photoH + 40;
@@ -1046,8 +1199,7 @@ sap.ui.define([],
                     //------------------------------------------------------------
                     // Render Both Defects & No-Defects Activities
                     //------------------------------------------------------------
-                    (section.section_maint_act_defects || []).forEach(item => renderMaintActivity(item, true));
-                    (section.section_maint_act_no_defects || []).forEach(item => renderMaintActivity(item, false));
+                    (section.maint_acts || []).forEach(item => renderMaintActivity(item, true));
                   }
 
                   //--------------------------------------------------------------
@@ -1059,48 +1211,53 @@ sap.ui.define([],
                     addPage(doc, page += 1);
                     const headerX = rectX, headerWidth = doc.page.width - 90;
 
-                    // Header
-                    drawRect("#00529B", xPointH, (rectY += 25) - 25, headerWidth);
-                    drawText("Recommended Work for section:", headerX, rectY - 17, {
-                      bold: true, size: 14, color: "#00529B", width: headerWidth - 20
+                    // Header (Blue)
+                    drawRoundedRect(doc, xPointH, (rectY += 25) - 25, headerWidth, 25, 4, BORDER_BLUE);
+                    drawText(doc, "Recommended Work for section:", headerX, rectY - 17, {
+                      bold: true, size: 14, color: BORDER_BLUE, width: headerWidth - 20
                     });
-                    drawText(section.section_name || "", headerX + 215, rectY - 17, {
-                      bold: true, size: 14, color: "#00529B", width: headerWidth
-                    });
-
-                    // Drainage
-                    drawRect("#F4A20B", xPointH, (rectY += 30) - 25, headerWidth);
-                    drawText(`${work.selection || ""}`, headerX, rectY - 17, {
-                      bold: true, size: 13, color: "#F4A20B", width: headerWidth
+                    drawText(doc, section.name || "", headerX + 215, rectY - 17, {
+                      bold: true, size: 14, color: BORDER_BLUE, width: headerWidth
                     });
 
-                    // Comments
-                    drawRect("#F4A20B", xPointH, (rectY += 25) - 20, headerWidth);
-                    drawText("Comments:", headerX, rectY - 13, { bold: true, size: 12, color: "#F4A20B" });
-                    drawText(work.comments || "No comments provided.", headerX, rectY + 20, {
+                    // Drainage (Yellow)
+                    drawRoundedRect(doc, xPointH, (rectY += 30) - 25, headerWidth, 25, 4, BORDER_ORANGE);
+                    drawText(doc, `${work.activity || ""}: ${work.selections[0].selection}`, headerX, rectY - 17, {
+                      bold: true, size: 13, color: BORDER_ORANGE, width: headerWidth
+                    });
+
+                    // Comments (Yellow)
+                    drawRoundedRect(doc, xPointH, (rectY += 25) - 20, headerWidth, 25, 4, BORDER_ORANGE);
+                    drawText(doc, "Comments:", headerX, rectY - 13, {
+                      bold: true, size: 12, color: BORDER_ORANGE
+                    });
+                    drawText(doc, work.comments || "No comments provided.", headerX, rectY + 20, {
                       size: 10, width: headerWidth
                     });
 
-                    // Photos
+                    // Photos (Yellow)
                     const photoHeaderY = doc.y + 10;
-                    drawRect("#F4A20B", xPointH, photoHeaderY, headerWidth);
-                    drawText("Photo(s):", headerX, photoHeaderY + 7, { bold: true, size: 12, color: "#F4A20B" });
+                    drawRoundedRect(doc, xPointH, photoHeaderY, headerWidth, 25, 4, BORDER_ORANGE);
+                    drawText(doc, "Photo(s):", headerX, photoHeaderY + 7, {
+                      bold: true, size: 12, color: BORDER_ORANGE
+                    });
 
                     // Photo Grid
                     const photos = work.photos || [];
-                    const imgW = 282, imgH = 212, colGap = 25, radius = 4;
+                    const imgW = 257, imgH = 172, colGap = 25, radius = 4;
                     const photoStartY = photoHeaderY + 32;
                     let col = 0, row = 0;
 
-                    photos.forEach((photo) => {
+                    (photos || []).forEach((photo) => {
                       const imgX = headerX + col * (imgW + colGap);
                       const imgY = photoStartY + row * (imgH + 60);
-                      drawImage(photo.photo, imgX, imgY, imgW, imgH, radius, photo.comment);
+                      drawImage(doc, photo.photo, imgX, imgY, imgW, imgH, radius, photo.comment);
                       if (++col >= 2) { col = 0; row++; }
                     });
 
                     rectY = photoStartY + Math.ceil(photos.length / 2) * (imgH + 60) + 10;
                   });
+
 
                 });
               }
@@ -1156,13 +1313,7 @@ sap.ui.define([],
 
             let xPoint = doc.page.margins.left;
             let yPoint = doc.page.margins.top;
-            var xPointH = 40,
-              yPointH = 110,
-              xPointCol1 = 40,
-              yPointCol1 = 125,
-              xPointCol2 = 282,
-              yPointCol2 = 125;
-            that.createFirstPageInfo(doc, jsonData, logo, reportName, xPoint, yPoint, xPointH, yPointH, xPointCol1, yPointCol1, xPointCol2, yPointCol2);
+            that.createFirstPageInfo(doc, jsonData, logo, reportName, xPoint, yPoint);
 
             addPage(doc, page += 1);
 
@@ -1174,14 +1325,14 @@ sap.ui.define([],
 
             // Draw "Report Summary" box border only
             doc.lineJoin("round")
-              .lineWidth(3)
-              .strokeColor("#00529B")
+              .lineWidth(2)
+              .strokeColor(BORDER_BLUE)
               .rect(xPointH, rectY - 25, doc.page.width - 90, 35)
               .stroke();
 
             doc.fontSize(18)
               .font("Helvetica-Bold")
-              .fillColor("#00529B")
+              .fillColor(BORDER_BLUE)
               .text("Report Summary", rectX, rectY - 15, {
                 width: doc.page.width - 100,
                 align: "left",
@@ -1196,12 +1347,12 @@ sap.ui.define([],
 
               const drawHeader = (color, title, textY, prefix = "") => {
                 doc.lineJoin("round")
-                  .lineWidth(3)
+                  .lineWidth(2)
                   .strokeColor(color)
                   .rect(xPointH, textY - 20, doc.page.width - 90, 25)
                   .fillAndStroke(color, color);
 
-                doc.fontSize(color === "#00529B" ? 14 : 13)
+                doc.fontSize(color === BORDER_BLUE ? 14 : 13)
                   .font("Helvetica-Bold")
                   .fillColor("white")
                   .text(`${prefix}${title}`, rectX, textY - 12, {
@@ -1219,8 +1370,8 @@ sap.ui.define([],
                 const rowHeight = 22;
 
                 doc.lineJoin("round")
-                  .lineWidth(3)
-                  .strokeColor("#00529B")
+                  .lineWidth(2)
+                  .strokeColor(BORDER_BLUE)
                   .rect(tableX, rectY - 5, tableWidth, rowHeight)
                   .stroke();
 
@@ -1231,7 +1382,7 @@ sap.ui.define([],
                   doc.moveTo(xPos, rectY - 5).lineTo(xPos, rectY - 5 + rowHeight).stroke();
                 }
 
-                doc.font("Helvetica").fontSize(10).fillColor("#121E28")
+                doc.font("Helvetica").fontSize(10).fillColor(TEXT_DARK)
                   .text(label, tableX + 6, rectY + 2, { width: colWidths[0] - 8, characterSpacing: -0.2, wordSpacing: -0.4 })
                   .text(activity, tableX + colWidths[0] + 6, rectY + 2, { width: colWidths[1] - 8, characterSpacing: -0.2, wordSpacing: -0.4 })
                   .text(selection, tableX + colWidths[0] + colWidths[1] + 6, rectY + 2, { width: colWidths[2] - 8, characterSpacing: -0.2, wordSpacing: -0.4 });
@@ -1241,14 +1392,14 @@ sap.ui.define([],
 
               // 🔵 BUILDING HEADER BAR
               rectY += 35;
-              drawHeader("#00529B", building.name, rectY, "Building: ");
+              drawHeader(BORDER_BLUE, building.name, rectY, "Building: ");
 
               //--------------------------------------------------------------
               // 🟧 SECTION LIST
               //--------------------------------------------------------------
               (building.sections || []).forEach((section) => {
                 rectY += 30;
-                drawHeader("#F4A20B", section.section_name, rectY, "Section: ");
+                drawHeader(BORDER_ORANGE, section.section_name, rectY, "Section: ");
                 rectY += 15; // small space before the table
 
                 // 📋 DEFECT + RECOMMENDED WORK TABLE
@@ -1278,18 +1429,18 @@ sap.ui.define([],
             //--------------------------------------------------------------
             // 🏢 LOOP THROUGH EACH BUILDING ENTRY
             //--------------------------------------------------------------
-            jsonData.buildings.forEach((building) => {
+            (jsonData.buildings || []).forEach((building) => {
               // ────────────────────────────────────────────────────────────────
               // 🧩 Local helpers (non-global)
               // ────────────────────────────────────────────────────────────────
-              const drawRect = (color, x, y, w, h = 25, lw = 3) => {
+              const drawRect = (color, x, y, w, h = 25, lw = 2) => {
                 doc.lineJoin("round").lineWidth(lw).strokeColor(color).rect(x, y, w, h).stroke();
               };
 
               const drawText = (text, x, y, opts = {}) => {
                 doc.font(opts.bold ? "Helvetica-Bold" : "Helvetica")
                   .fontSize(opts.size || 10)
-                  .fillColor(opts.color || "#121E28")
+                  .fillColor(opts.color || TEXT_DARK)
                   .text(text, x, y, {
                     width: opts.width || 200,
                     align: opts.align || "left",
@@ -1299,13 +1450,13 @@ sap.ui.define([],
                   });
               };
 
-              const drawImage = (img, x, y, w = 282, h = 212, radius = 4, commentText = "This is a sample photo comment.") => {
+              const drawImage = (img, x, y, w = 282, h = 212, radius = 4, commentText = "No Comments") => {
                 if (!img) return;
                 doc.save();
                 doc.roundedRect(x, y, w, h, radius).clip();
                 doc.image(`data:image/jpg;base64,${img}`, x, y, { width: w, height: h });
                 doc.restore();
-                drawText(commentText, x, y + h + 6, { size: 9, width: w });
+                drawText(doc, commentText, x, y + h + 6, { size: 9, width: w });
               };
 
               // ────────────────────────────────────────────────────────────────
@@ -1316,9 +1467,9 @@ sap.ui.define([],
               // ────────────────────────────────────────────────────────────────
               // 🏠 BUILDING HEADER
               // ────────────────────────────────────────────────────────────────
-              drawRect("#00529B", xPointH, (rectY += 27) - 25, doc.page.width - 90);
-              drawText(`Building: ${building.name}`, rectX, rectY - 17, {
-                bold: true, size: 14, color: "#00529B", width: doc.page.width - 120
+              drawRect(doc, BORDER_BLUE, xPointH, (rectY += 27) - 25, doc.page.width - 90);
+              drawText(doc, `Building: ${building.name}`, rectX, rectY - 17, {
+                bold: true, size: 14, color: BORDER_BLUE, width: doc.page.width - 120
               });
 
               // 🔗 Building Aerial Photo Button
@@ -1326,9 +1477,9 @@ sap.ui.define([],
                 const [btnWidth, btnHeight, radius] = [180, 15, 6];
                 const btnX = doc.page.width - btnWidth - 54, btnY = rectY - 20;
                 doc.save();
-                doc.roundedRect(btnX, btnY, btnWidth, btnHeight, radius).fill("#00529B");
+                doc.roundedRect(btnX, btnY, btnWidth, btnHeight, radius).fill(BORDER_BLUE);
                 doc.restore();
-                drawText("Building Aerial View Photo", btnX, btnY + 4, {
+                drawText(doc, "Building Aerial View Photo", btnX, btnY + 4, {
                   bold: true, size: 10, color: "white", width: btnWidth, align: "center", link: building.aerial_photo_url
                 });
               }
@@ -1336,9 +1487,9 @@ sap.ui.define([],
               // ────────────────────────────────────────────────────────────────
               // 🟧 BUILDING COMMENTS
               // ────────────────────────────────────────────────────────────────
-              drawRect("#F4A20B", xPointH, (rectY += 25) - 20, doc.page.width - 90);
-              drawText("Comments", rectX, rectY - 13, { bold: true, size: 14, color: "#F4A20B" });
-              drawText(building.building_comments || "No comments provided.", rectX, rectY + 20, {
+              drawRect(doc, BORDER_ORANGE, xPointH, (rectY += 25) - 20, doc.page.width - 90);
+              drawText(doc, "Comments", rectX, rectY - 13, { bold: true, size: 14, color: BORDER_ORANGE });
+              drawText(doc, building.building_comments || "No comments provided.", rectX, rectY + 20, {
                 size: 10, width: doc.page.width - 90
               });
 
@@ -1346,8 +1497,8 @@ sap.ui.define([],
               // 🏗️ BUILDING PHOTO
               // ────────────────────────────────────────────────────────────────
               const photoHeaderY = doc.y + 10;
-              drawRect("#F4A20B", xPointH, photoHeaderY, doc.page.width - 90);
-              drawText("Building Photo", rectX, photoHeaderY + 8, { bold: true, size: 14, color: "#F4A20B" });
+              drawRect(doc, BORDER_ORANGE, xPointH, photoHeaderY, doc.page.width - 90);
+              drawText(doc, "Building Photo", rectX, photoHeaderY + 8, { bold: true, size: 14, color: BORDER_ORANGE });
               if (building.photos?.length) {
                 const photoWidth = 257;
                 const photoHeight = 172;
@@ -1358,7 +1509,7 @@ sap.ui.define([],
                 let y = photoHeaderY + 35;
                 let photoCount = 0;
 
-                building.photos.forEach((photo, index) => {
+                (building.photos || []).forEach((photo, index) => {
                   // 🧾 Page break if image exceeds bottom margin
                   if (y + photoHeight + 60 > doc.page.height - 45) {
                     addPage(doc, page += 1);
@@ -1367,14 +1518,14 @@ sap.ui.define([],
                   }
 
                   // 🖼️ Draw the photo (use your helper)
-                  drawImage(
+                  drawImage(doc,
                     photo.photo,
                     x,
                     y,
                     photoWidth,
                     photoHeight,
                     8,
-                    photo.comment || "This is a sample photo comment."
+                    photo.comments || "No Comments"
                   );
 
                   photoCount++;
@@ -1398,45 +1549,45 @@ sap.ui.define([],
                 rectX = 45; rectY = 45; addPage(doc, page += 1);
 
                 // SECTION HEADER
-                drawRect("#00529B", xPointH, (rectY += 27) - 25, doc.page.width - 90);
-                drawText(`Section: ${section.section_name}`, rectX, rectY - 17, {
-                  bold: true, size: 14, color: "#00529B", width: doc.page.width - 120
+                drawRect(doc, BORDER_BLUE, xPointH, (rectY += 27) - 25, doc.page.width - 90);
+                drawText(doc, `Section: ${section.section_name}`, rectX, rectY - 17, {
+                  bold: true, size: 14, color: BORDER_BLUE, width: doc.page.width - 120
                 });
 
                 if (section.aerial_photo_url) {
                   const [btnWidth, btnHeight, radius] = [180, 15, 6];
                   const btnX = doc.page.width - btnWidth - 54, btnY = rectY - 20;
-                  doc.save(); doc.roundedRect(btnX, btnY, btnWidth, btnHeight, radius).fill("#00529B"); doc.restore();
-                  drawText("Section Aerial View Photo", btnX, btnY + 4, {
+                  doc.save(); doc.roundedRect(btnX, btnY, btnWidth, btnHeight, radius).fill(BORDER_BLUE); doc.restore();
+                  drawText(doc, "Section Aerial View Photo", btnX, btnY + 4, {
                     bold: true, size: 10, color: "white", width: btnWidth, align: "center", link: section.aerial_photo_url
                   });
                 }
 
                 // COMMENTS
-                drawRect("#F4A20B", xPointH, (rectY += 25) - 20, doc.page.width - 90);
-                drawText("Comments", rectX, rectY - 13, { bold: true, size: 14, color: "#F4A20B" });
-                drawText(section.section_comments || "No comments provided.", rectX, rectY + 20, {
+                drawRect(doc, BORDER_ORANGE, xPointH, (rectY += 25) - 20, doc.page.width - 90);
+                drawText(doc, "Comments", rectX, rectY - 13, { bold: true, size: 14, color: BORDER_ORANGE });
+                drawText(doc, section.section_comments || "No comments provided.", rectX, rectY + 20, {
                   size: 10, width: doc.page.width - 90
                 });
 
                 // SECTION PHOTO
                 const photoY = doc.y + 10;
-                drawRect("#F4A20B", xPointH, photoY, doc.page.width - 90);
-                drawText("Section Overview Photo", rectX, photoY + 8, { bold: true, size: 14, color: "#F4A20B" });
+                drawRect(doc, BORDER_ORANGE, xPointH, photoY, doc.page.width - 90);
+                drawText(doc, "Section Overview Photo", rectX, photoY + 8, { bold: true, size: 14, color: BORDER_ORANGE });
                 if (section.section_photo) {
-                  drawImage(section.section_photo, xPointH, photoY + 35);
+                  drawImage(doc, section.section_photo, xPointH, photoY + 35);
                   rectY = photoY + 35 + 212 + 15;
                 }
 
                 // DEFECT SUMMARY
                 if (section.defects?.length) {
                   rectX = 45; rectY = 45; addPage(doc, page += 1);
-                  drawRect("#00529B", xPointH, (rectY += 52) - 50, doc.page.width - 90, 50);
-                  drawText("Defect Summary For Section:", rectX, rectY - 42, {
-                    bold: true, size: 14, color: "#00529B", width: doc.page.width - 90
+                  drawRect(doc, BORDER_BLUE, xPointH, (rectY += 52) - 50, doc.page.width - 90, 50);
+                  drawText(doc, "Defect Summary For Section:", rectX, rectY - 42, {
+                    bold: true, size: 14, color: BORDER_BLUE, width: doc.page.width - 90
                   });
-                  drawText(section.section_name || "", rectX, rectY - 20, {
-                    bold: true, size: 14, color: "#00529B", width: doc.page.width - 90
+                  drawText(doc, section.section_name || "", rectX, rectY - 20, {
+                    bold: true, size: 14, color: BORDER_BLUE, width: doc.page.width - 90
                   });
                 }
 
@@ -1447,42 +1598,42 @@ sap.ui.define([],
                   addPage(doc, page += 1);
 
                   // DEFECT HEADER
-                  drawRect("#F4A20B", xPointH, (rectY += 52) - 45, doc.page.width - 90);
-                  drawText(`Field of roof : ${defect.activity || ""} ${defect.selection || ""}`, rectX, rectY - 38, {
-                    bold: true, size: 14, color: "#F4A20B", width: doc.page.width - 100
+                  drawRect(doc, BORDER_ORANGE, xPointH, (rectY += 52) - 45, doc.page.width - 90);
+                  drawText(doc, `Field of roof : ${defect.activity || ""} ${defect.selection || ""}`, rectX, rectY - 38, {
+                    bold: true, size: 14, color: BORDER_ORANGE, width: doc.page.width - 100
                   });
 
                   const leftColX = xPointH, rightColX = xPointH + 270, sectionTopY = rectY - 10;
 
                   // Overview
-                  drawRect("#F4A20B", leftColX, sectionTopY, 257);
-                  drawText("Overview:", rectX, sectionTopY + 7, { bold: true, size: 12, color: "#F4A20B" });
-                  drawImage(defect.repair_overview_photo, leftColX, sectionTopY + 35, 257, 172);
+                  drawRect(doc, BORDER_ORANGE, leftColX, sectionTopY, 257);
+                  drawText(doc, "Overview:", rectX, sectionTopY + 7, { bold: true, size: 12, color: BORDER_ORANGE });
+                  drawImage(doc, defect.repair_overview_photo, leftColX, sectionTopY + 35, 257, 172);
 
                   // Description
-                  drawRect("#F4A20B", rightColX, sectionTopY, doc.page.width - 360);
-                  drawText("Description:", rightColX + 5, sectionTopY + 7, { bold: true, size: 12, color: "#F4A20B" });
-                  drawText(defect.description || "No description provided.", rightColX, sectionTopY + 35, {
+                  drawRect(doc, BORDER_ORANGE, rightColX, sectionTopY, doc.page.width - 360);
+                  drawText(doc, "Description:", rightColX + 5, sectionTopY + 7, { bold: true, size: 12, color: BORDER_ORANGE });
+                  drawText(doc, defect.description || "No description provided.", rightColX, sectionTopY + 35, {
                     size: 10, width: doc.page.width - 380
                   });
 
                   // Comments
                   const commentY = doc.y + 10;
-                  drawRect("#F4A20B", rightColX, commentY, doc.page.width - 360);
-                  drawText("Comments:", rightColX + 5, commentY + 7, { bold: true, size: 12, color: "#F4A20B" });
-                  drawText(defect.comments || "No comments provided.", rightColX, commentY + 32, {
+                  drawRect(doc, BORDER_ORANGE, rightColX, commentY, doc.page.width - 360);
+                  drawText(doc, "Comments:", rightColX + 5, commentY + 7, { bold: true, size: 12, color: BORDER_ORANGE });
+                  drawText(doc, defect.comments || "No comments provided.", rightColX, commentY + 32, {
                     size: 10, width: doc.page.width - 380
                   });
 
                   // Defect + Repair Photos
                   const photoRowY = Math.max(doc.y + 25, sectionTopY + 270);
-                  drawRect("#F4A20B", leftColX, photoRowY, 257);
-                  drawText("Defect:", rectX, photoRowY + 7, { bold: true, size: 12, color: "#F4A20B" });
-                  drawImage(defect.defect_photo, leftColX, photoRowY + 35, 257, 172);
+                  drawRect(doc, BORDER_ORANGE, leftColX, photoRowY, 257);
+                  drawText(doc, "Defect:", rectX, photoRowY + 7, { bold: true, size: 12, color: BORDER_ORANGE });
+                  drawImage(doc, defect.defect_photo, leftColX, photoRowY + 35, 257, 172);
 
-                  drawRect("#F4A20B", rightColX, photoRowY, doc.page.width - 360);
-                  drawText("Repair:", rightColX + 5, photoRowY + 7, { bold: true, size: 12, color: "#F4A20B" });
-                  drawImage(defect.repair_photo, rightColX, photoRowY + 35, 257, 172);
+                  drawRect(doc, BORDER_ORANGE, rightColX, photoRowY, doc.page.width - 360);
+                  drawText(doc, "Repair:", rightColX + 5, photoRowY + 7, { bold: true, size: 12, color: BORDER_ORANGE });
+                  drawImage(doc, defect.repair_photo, rightColX, photoRowY + 35, 257, 172);
                 });
 
                 // RECOMMENDED WORK ITEMS
@@ -1493,31 +1644,31 @@ sap.ui.define([],
                   const headerX = rectX, headerWidth = doc.page.width - 90;
 
                   // Header
-                  drawRect("#00529B", xPointH, (rectY += 25) - 25, headerWidth);
-                  drawText("Recommended Work for section:", headerX, rectY - 17, {
-                    bold: true, size: 14, color: "#00529B", width: headerWidth - 20
+                  drawRect(doc, BORDER_BLUE, xPointH, (rectY += 25) - 25, headerWidth);
+                  drawText(doc, "Recommended Work for section:", headerX, rectY - 17, {
+                    bold: true, size: 14, color: BORDER_BLUE, width: headerWidth - 20
                   });
-                  drawText(section.section_name || "", headerX + 215, rectY - 17, {
-                    bold: true, size: 14, color: "#00529B", width: headerWidth
+                  drawText(doc, section.section_name || "", headerX + 215, rectY - 17, {
+                    bold: true, size: 14, color: BORDER_BLUE, width: headerWidth
                   });
 
                   // Drainage
-                  drawRect("#F4A20B", xPointH, (rectY += 30) - 25, headerWidth);
-                  drawText(`${work.selection || ""}`, headerX, rectY - 17, {
-                    bold: true, size: 13, color: "#F4A20B", width: headerWidth
+                  drawRect(doc, BORDER_ORANGE, xPointH, (rectY += 30) - 25, headerWidth);
+                  drawText(doc, `${work.selection || ""}`, headerX, rectY - 17, {
+                    bold: true, size: 13, color: BORDER_ORANGE, width: headerWidth
                   });
 
                   // Comments
-                  drawRect("#F4A20B", xPointH, (rectY += 25) - 20, headerWidth);
-                  drawText("Comments:", headerX, rectY - 13, { bold: true, size: 12, color: "#F4A20B" });
-                  drawText(work.comments || "No comments provided.", headerX, rectY + 20, {
+                  drawRect(doc, BORDER_ORANGE, xPointH, (rectY += 25) - 20, headerWidth);
+                  drawText(doc, "Comments:", headerX, rectY - 13, { bold: true, size: 12, color: BORDER_ORANGE });
+                  drawText(doc, work.comments || "No comments provided.", headerX, rectY + 20, {
                     size: 10, width: headerWidth
                   });
 
                   // Photos
                   const photoHeaderY = doc.y + 10;
-                  drawRect("#F4A20B", xPointH, photoHeaderY, headerWidth);
-                  drawText("Photo(s):", headerX, photoHeaderY + 7, { bold: true, size: 12, color: "#F4A20B" });
+                  drawRect(doc, BORDER_ORANGE, xPointH, photoHeaderY, headerWidth);
+                  drawText(doc, "Photo(s):", headerX, photoHeaderY + 7, { bold: true, size: 12, color: BORDER_ORANGE });
 
                   // Photo Grid
                   const photos = work.photos || [];
@@ -1525,10 +1676,10 @@ sap.ui.define([],
                   const photoStartY = photoHeaderY + 32;
                   let col = 0, row = 0;
 
-                  photos.forEach((photo) => {
+                  (photos || []).forEach((photo) => {
                     const imgX = headerX + col * (imgW + colGap);
                     const imgY = photoStartY + row * (imgH + 60);
-                    drawImage(photo.photo, imgX, imgY, imgW, imgH, radius, photo.comment);
+                    drawImage(doc, photo.photo, imgX, imgY, imgW, imgH, radius, photo.comment);
                     if (++col >= 2) { col = 0; row++; }
                   });
 
@@ -1544,13 +1695,13 @@ sap.ui.define([],
               addPage(doc, page += 1);
               let rectX = 45, rectY = 45;
               const fullWidth = doc.page.width - 90;
-              const borderColor = "#00529B", textColor = "#121E28", orange = "#F4A20B";
+              const borderColor = BORDER_BLUE, textColor = TEXT_DARK, orange = BORDER_ORANGE;
 
               //--------------------------------------------------------------
               // 🔧 Helper Functions (no layout change)
               //--------------------------------------------------------------
               const drawRect = (x, y, w, h, color, fill = false) => {
-                doc.lineJoin("round").lineWidth(3).strokeColor(color);
+                doc.lineJoin("round").lineWidth(2).strokeColor(color);
                 return fill ? doc.rect(x, y, w, h).fillAndStroke(color, color) : doc.rect(x, y, w, h).stroke();
               };
 
@@ -1561,9 +1712,9 @@ sap.ui.define([],
 
               const drawTableHeader = (headers, y, fillColor) => {
                 const colWidths = [fullWidth * 0.40, fullWidth * 0.20, fullWidth * 0.20, fullWidth * 0.20];
-                drawRect(xPointH, y, fullWidth, 22, fillColor, true);
+                drawRect(doc, xPointH, y, fullWidth, 22, fillColor, true);
                 let colX = xPointH;
-                headers.forEach((t, i) => {
+                (headers || []).forEach((t, i) => {
                   doc.fillColor("white").font("Helvetica-Bold").fontSize(11)
                     .text(t, colX + 5, y + 6, {
                       width: colWidths[i] - 10,
@@ -1576,17 +1727,17 @@ sap.ui.define([],
               };
 
               const drawDataRows = (rows, cols, yOffset, isMaterial = false) => {
-                rows.forEach(row => {
+                (rows || []).forEach(row => {
                   let colX = xPointH;
 
                   // Draw full row border
-                  drawRect(colX, rectY + yOffset, fullWidth, 22, borderColor);
+                  drawRect(doc, colX, rectY + yOffset, fullWidth, 22, borderColor);
 
                   // Draw vertical dividers
                   let dividerX = xPointH;
                   for (let j = 0; j < cols.length - 1; j++) {
                     dividerX += cols[j];
-                    drawRect(dividerX, rectY + yOffset, 0.5, 22, borderColor);
+                    drawRect(doc, dividerX, rectY + yOffset, 0.5, 22, borderColor);
                   }
 
                   // Text setup
@@ -1599,7 +1750,7 @@ sap.ui.define([],
                     : [row.type, row.qty, row.rate, row.total];
 
                   // Format numeric values for Qty / Unit Price / Rate / Total
-                  values.forEach((val, i) => {
+                  (values || []).forEach((val, i) => {
                     let displayVal = val;
 
                     // Apply numeric formatting only for numeric cells (except first column)
@@ -1626,15 +1777,15 @@ sap.ui.define([],
               //--------------------------------------------------------------
               // 📘 MAIN TITLE
               //--------------------------------------------------------------
-              drawRect(xPointH, rectY - 15, fullWidth, 30, borderColor);
+              drawRect(doc, xPointH, rectY - 15, fullWidth, 30, borderColor);
               drawHeaderText("Labor and Materials", rectX, rectY - 6, borderColor, 18);
               rectY += 25;
 
               //--------------------------------------------------------------
               // 🟦 Labor Header
               //--------------------------------------------------------------
-              drawRect(xPointH, rectY - 6, fullWidth, 25, borderColor, true);
-              drawHeaderText("Labor and Fees", rectX, rectY + 3, "white", 13);
+              drawRect(doc, xPointH, rectY - 6, fullWidth, 25, borderColor, true);
+              drawHeaderText("Labor and Fees", rectX, rectY + 2, "white", 13);
               rectY += 25;
 
               //--------------------------------------------------------------
@@ -1647,7 +1798,7 @@ sap.ui.define([],
               //--------------------------------------------------------------
               // 🟧 Labor Total
               //--------------------------------------------------------------
-              drawRect(xPointH, rectY + 6, fullWidth, 22, orange, true);
+              drawRect(doc, xPointH, rectY + 6, fullWidth, 22, orange, true);
               drawHeaderText("Labor and Fees Total:", rectX, rectY + 12, "white", 11);
               drawHeaderText(
                 `${parseFloat(jsonData.labor_materials_summary.labor_and_fees_total || 0)
@@ -1659,7 +1810,7 @@ sap.ui.define([],
               //--------------------------------------------------------------
               // 🟦 Materials Header
               //--------------------------------------------------------------
-              drawRect(xPointH, rectY, fullWidth, 25, borderColor, true);
+              drawRect(doc, xPointH, rectY, fullWidth, 25, borderColor, true);
               drawHeaderText("Materials", rectX, rectY + 7, "white", 13);
               rectY += 25;
 
@@ -1673,7 +1824,7 @@ sap.ui.define([],
               //--------------------------------------------------------------
               // 🟧 Material Total
               //--------------------------------------------------------------
-              drawRect(xPointH, rectY + 12, fullWidth, 22, orange, true);
+              drawRect(doc, xPointH, rectY + 12, fullWidth, 22, orange, true);
               drawHeaderText("Materials Total:", rectX, rectY + 18, "white", 11);
               drawHeaderText(
                 `${parseFloat(jsonData.labor_materials_summary.material_total || 0)
@@ -1686,7 +1837,7 @@ sap.ui.define([],
               // 🔵 Totals Summary Box
               //--------------------------------------------------------------
               const totalsHeight = 70;
-              drawRect(xPointH, rectY, fullWidth, totalsHeight, borderColor, true);
+              drawRect(doc, xPointH, rectY, fullWidth, totalsHeight, borderColor, true);
               doc.fillColor("white").font("Helvetica").fontSize(11);
               doc.text("Subtotal:", xPointH + fullWidth - 250, rectY + 11);
               doc.text(`${parseFloat(jsonData.labor_materials_summary.subtotal || 0)
@@ -1699,7 +1850,7 @@ sap.ui.define([],
                 .toLocaleString('en-US', currencyOptions)}`, xPointH + fullWidth - 95, rectY + 26,
                 { width: 90, align: "right" });
 
-              doc.lineWidth(1).strokeColor("white")
+              doc.lineWidth(2).strokeColor("white")
                 .moveTo(xPointH + fullWidth - 250, rectY + 43)
                 .lineTo(xPointH + fullWidth - 5, rectY + 43).stroke();
 
@@ -1742,78 +1893,82 @@ sap.ui.define([],
           });
         });
       },
-      createFirstPageInfo: function (doc, jsonData, logo, reportName, xPoint, yPoint, xPointH, yPointH, xPointCol1, yPointCol1, xPointCol2, yPointCol2) {
+      createFirstPageInfo: function (doc, jsonData, logo, reportName, xPoint, yPoint) {
 
         const pd = jsonData;
-        const blue = "#00529B";
-        const textColor = "#121E28";
-        const lineW = 3;
+        const lineW = 2;
         const colWidth = 230;
 
+        // HEADER BOX (replaces .rect)
         const drawHeaderBox = (x, y, title, titleX) => {
-          doc.lineJoin("round")
-            .lineWidth(lineW)
-            .strokeColor(blue)
-            .rect(x, y, colWidth, 25)
-            .stroke()
-            .fillColor(blue).font("Helvetica-Bold").fontSize(12)
-            .text(title, titleX, y + 8, { width: doc.page.width - 90, characterSpacing: -0.2, wordSpacing: -0.4 })
-            .fillColor(textColor)
-            .font("Helvetica")
-            .fontSize(11);
+          drawRoundedRect(doc, x, y, colWidth, 25, 4, BORDER_BLUE, false);
+          drawText(doc, title, titleX, y + 8, {
+            bold: true,
+            size: 12,
+            color: BORDER_BLUE,
+            width: doc.page.width - 90
+          });
         };
 
+        // ADDRESS BLOCK (replaces doc.text)
         const drawAddressBlock = (data, x, y) => {
-          doc.text(data.name || "", x, y + 40, { characterSpacing: -0.2, wordSpacing: -0.4 })
-            .text(data.address || "", x, y + 60, { characterSpacing: -0.2, wordSpacing: -0.4 })
-            .text(
-              (data.city ? `${data.city}, ` : "") + (data.state || "") + " " + (data.zip || ""),
-              x, y + 80, { characterSpacing: -0.2, wordSpacing: -0.4 }
-            )
-            .text("Attn: ", x, y + 100, { characterSpacing: -0.2, wordSpacing: -0.4 })
-            .text(data.contact_name || "", x, y + 120, { characterSpacing: -0.2, wordSpacing: -0.4 })
-            .text((data.contact_email || "").toLowerCase(), x, y + 140, { characterSpacing: -0.2, wordSpacing: -0.4 });
+          drawText(doc, data.name || "", x, y + 40);
+          drawText(doc, data.address || "", x, y + 60);
+          drawText(doc,
+            (data.city ? `${data.city}, ` : "") + (data.state || "") + " " + (data.zip || ""),
+            x, y + 80
+          );
+          drawText(doc, "Attn: ", x, y + 100);
+          drawText(doc, data.contact_name || "", x, y + 120);
+          drawText(doc, (data.contact_email || "").toLowerCase(), x, y + 140);
         };
 
         const drawManagerBlock = (data, x, y, title, titleX) => {
           drawHeaderBox(x, y, title, titleX);
-          doc.text(data.name || "", xPointCol2 = (xPointH + 292), yPointCol2 = (y + 40), { characterSpacing: -0.2, wordSpacing: -0.4 })
-            .text(data.address || "", xPointCol2, yPointCol2 += 20, { characterSpacing: -0.2, wordSpacing: -0.4 })
-            .text(
-              (data.city ? `${data.city}, ` : "") + (data.state || "") + " " + (data.zip || ""),
-              xPointCol2, yPointCol2 += 20, { characterSpacing: -0.2, wordSpacing: -0.4 }
-            )
-            .text((data.email || "").toLowerCase(), xPointCol2, yPointCol2 += 20, { characterSpacing: -0.2, wordSpacing: -0.4 })
-            .text(`Phone: ${data.phone || ""}`, xPointCol2, yPointCol2 += 20, { characterSpacing: -0.2, wordSpacing: -0.4 })
-            .text(`Fax: ${data.fax || ""}`, xPointCol2, yPointCol2 += 20, { characterSpacing: -0.2, wordSpacing: -0.4 });
+
+          drawText(doc, data.name || "", xPointCol2 = (xPointH + 292), yPointCol2 = (y + 40));
+          drawText(doc, data.address || "", xPointCol2, yPointCol2 += 20);
+          drawText(doc,
+            (data.city ? `${data.city}, ` : "") + (data.state || "") + " " + (data.zip || ""),
+            xPointCol2, yPointCol2 += 20
+          );
+          drawText(doc, (data.email || "").toLowerCase(), xPointCol2, yPointCol2 += 20);
+          drawText(doc, `Phone: ${data.phone || ""}`, xPointCol2, yPointCol2 += 20);
+          drawText(doc, `Fax: ${data.fax || ""}`, xPointCol2, yPointCol2 += 20);
         };
 
         // -----------------------------------------------------------
         // LOGO + REPORT TITLE
         // -----------------------------------------------------------
-        doc.image(logo, xPoint + 3, yPoint, { width: 230, align: "left" });
-        doc.fontSize(16)
-          .fillColor(blue)
-          .font("Helvetica-Bold")
-          .text(reportName, 328, yPoint + 15, {
-            width: 280, characterSpacing: -0.2, wordSpacing: -0.4
-          });
+        doc.image(logo, xPoint + 2, yPoint, { width: 230, align: "left" });
+
+        drawText(doc, reportName, 328, yPoint + 15, {
+          bold: true,
+          size: 16,
+          color: BORDER_BLUE,
+          width: doc.pageWidth - 90
+        });
 
         // -----------------------------------------------------------
-        // TOP BLUE LINE + HEADER INFO
+        // TOP BLUE LINE
         // -----------------------------------------------------------
-        doc.lineJoin("round")
-          .lineWidth(lineW)
-          .strokeColor(blue)
-          .rect(xPointH, yPointH, doc.page.width - 90, 1)
-          .stroke();
+        drawRoundedRect(doc, xPointH, yPointH, doc.page.width - 90, 1, 0, BORDER_BLUE, false);
 
-        doc.fillColor(textColor)
-          .font("Helvetica").fontSize(12)
-          .text(`Notification: ${pd.notification_number || ""}`, xPointCol1, yPointCol1, { characterSpacing: -0.2, wordSpacing: -0.4 })
-          .text(pd.start_work_date ? `Start Work Date: ${pd.start_work_date}` : "", xPointH + 290, yPointCol2, { characterSpacing: -0.2, wordSpacing: -0.4 })
-          .text(`PO Number: ${pd.po_number || ""}`, xPointCol1, yPointCol1 + 20, { characterSpacing: -0.2, wordSpacing: -0.4 })
-          .text(pd.completed_work_date ? `Completed Work Date: ${pd.completed_work_date}` : "", xPointH + 290, yPointCol2 + 20, { characterSpacing: -0.2, wordSpacing: -0.4 });
+        drawText(doc, `Notification: ${pd.notification_number || ""}`,
+          xPointCol1, yPointCol1, { size: 12 });
+
+        drawText(doc,
+          pd.start_work_date ? `Start Work Date: ${pd.start_work_date}` : "",
+          xPointH + 290, yPointCol2, { size: 12 }
+        );
+
+        drawText(doc, `PO Number: ${pd.po_number || ""}`,
+          xPointCol1, yPointCol1 + 20, { size: 12 });
+
+        drawText(doc,
+          pd.completed_work_date ? `Completed Work Date: ${pd.completed_work_date}` : "",
+          xPointH + 290, yPointCol2 + 20, { size: 12 }
+        );
 
         // -----------------------------------------------------------
         // CUSTOMER + SERVICE MANAGER
@@ -1834,43 +1989,47 @@ sap.ui.define([],
         drawManagerBlock(pd.sales_rep, xPointH + 290, yPointH, "Sales Representative", xPointH + 295);
 
         // -----------------------------------------------------------
-        // SITE CONTACTS
+        // SITE CONTACTS LINE
         // -----------------------------------------------------------
-        yPointH += 187;
-        doc.lineJoin("round")
-          .moveTo(xPointH, yPointH)
+        doc.lineWidth(lineW)
+          .moveTo(xPointH, yPointH += 187)
           .lineTo(xPointH + doc.page.width - 90, yPointH)
           .stroke();
 
-        doc.text(`Site Contact: ${pd.site_contact_before.contact_name || ""}`, xPointCol1, yPointCol1 = (yPointH + 12))
-          .fontSize(8).font('Helvetica-Bold')
-          .text(`${pd.site_contact_before.text || ""}`, { width: 245, align: 'left', characterSpacing: -0.2, wordSpacing: -0.4 })
-          .fillColor(blue)
-          .text(`${pd.site_contact_before.url_text}`, {
-            link: pd.site_contact_before.url, underline: true,
-            characterSpacing: -0.2, wordSpacing: -0.4
-          })
-          .fillColor(textColor);
+        // BEFORE CONTACT
+        drawText(doc, `Site Contact: ${pd.site_contact_before.contact_name || ""}`,
+          xPointCol1, yPointCol1 = (yPointH + 12), { size: 12 });
+
+        drawText(doc, `${pd.site_contact_before.text || ""}`,
+          xPointCol1, doc.y, { size: 8, bold: true, width: 245 });
+
+        drawText(doc, `${pd.site_contact_before.url_text}`,
+          xPointCol1, doc.y, {
+          size: 8,
+          color: BORDER_BLUE,
+          link: pd.site_contact_before.url,
+          underline: true
+        });
 
         const siteContactTextH = doc.y;
 
-        doc.font("Helvetica").fontSize(12)
-          .text(`Site Contact: ${pd.site_contact_after.contact_name || ""}`, xPointH + 290, yPointCol1, { characterSpacing: -0.2, wordSpacing: -0.4 })
-          .fontSize(8).font('Helvetica-Bold')
-          .text(`${pd.site_contact_after.text}`, { width: 245, align: 'left', characterSpacing: -0.2, wordSpacing: -0.4 });
+        // AFTER CONTACT
+        drawText(doc, `Site Contact: ${pd.site_contact_after.contact_name || ""}`,
+          xPointH + 290, yPointCol1, { size: 12 });
+
+        drawText(doc, `${pd.site_contact_after.text}`,
+          xPointH + 290, doc.y, { size: 8, bold: true, width: 245 });
 
         yPointCol1 = Math.max(doc.y, siteContactTextH);
 
         // -----------------------------------------------------------
-        // SIGNATURE / BYPASS TEXT
+        // SIGNATURE / BYPASS
         // -----------------------------------------------------------
         const renderSignature = (sig, x, y, reasonText) => {
           if (sig) {
-            doc.image(`data:image/png;base64, ${sig}`, x, y + 5, { width: 160 });
+            doc.image(`data:image/png;base64,${sig}`, x, y + 5, { width: 160 });
           } else {
-            doc.x = x; doc.y = y;
-            doc.font("Helvetica").fontSize(12)
-              .text(`\n\n${reasonText || ""}`, { characterSpacing: -0.2, wordSpacing: -0.4 });
+            drawText(doc, reasonText || "", x, y + 20, { size: 12 });
           }
         };
 
@@ -1880,23 +2039,17 @@ sap.ui.define([],
         // -----------------------------------------------------------
         // FOOTER LINES + LABELS
         // -----------------------------------------------------------
-        doc.lineWidth(lineW)
-          .moveTo(xPointH, yPointH += 195)
-          .lineTo(xPointH + 230, yPointH)
-          .stroke()
-          .moveTo(xPointH + 292, yPointH)
-          .lineTo(xPointH + doc.page.width - 90, yPointH)
-          .stroke();
+        drawRoundedRect(doc, xPointH, yPointH += 195, 230, 1, 0, BORDER_BLUE, false);
+        drawRoundedRect(doc, xPointH + 292, yPointH, doc.page.width - 90 - 292, 1, 0, BORDER_BLUE, false);
 
-        doc.font("Helvetica").fontSize(12)
-          .text("Authorized signatory", xPointH, yPointH + 5, { characterSpacing: -0.2, wordSpacing: -0.4 })
-          .text("Authorized signatory", xPointH + 290, yPointH + 5, { characterSpacing: -0.2, wordSpacing: -0.4 });
+        drawText(doc, "Authorized signatory", xPointH, yPointH + 5, { size: 12 });
+        drawText(doc, "Authorized signatory", xPointH + 290, yPointH + 5, { size: 12 });
       },
       createStatusLogScreen: function (doc, jsonData, page, addPage, xPointH) {
         addPage(doc, page += 1, null);
 
-        const borderColor = "#00529B";
-        const textColor = "#121E28";
+        const borderColor = BORDER_BLUE;
+        const textColor = TEXT_DARK;
         const rectX = 45, fullWidth = doc.page.width - 90;
         let rectY = 45;
 
@@ -1904,12 +2057,12 @@ sap.ui.define([],
         // 🟦 MAIN HEADING (Transparent, Blue Border)
         //-------------------------------------------------------
         const headingHeight = 30;
-        doc.lineJoin("round").lineWidth(3).strokeColor(borderColor)
+        doc.lineJoin("round").lineWidth(2).strokeColor(borderColor)
           .rect(xPointH, rectY, fullWidth, headingHeight).stroke();
 
         doc.font("Helvetica-Bold").fontSize(16).fillColor(borderColor)
           .text(
-            `Status Log from Tablet for Notification: ${jsonData.project_details.notification_number}`,
+            `Status Log from Tablet for Notification: ${jsonData.notification_number}`,
             rectX, rectY + 9,
             { width: fullWidth - 20, align: "left", characterSpacing: -0.2, wordSpacing: -0.4 }
           );
@@ -1937,7 +2090,7 @@ sap.ui.define([],
           );
 
           for (const col of columns) {
-            doc.lineJoin("round").lineWidth(3).strokeColor(borderColor)
+            doc.lineJoin("round").lineWidth(2).strokeColor(borderColor)
               .rect(colX, rectY, col.width, headerHeight)
               .fillAndStroke(borderColor, borderColor);
 
@@ -1976,7 +2129,7 @@ sap.ui.define([],
           }
 
           // Outer row border
-          doc.lineJoin("round").lineWidth(3).strokeColor(borderColor)
+          doc.lineJoin("round").lineWidth(2).strokeColor(borderColor)
             .rect(xPointH, rectY, fullWidth, maxHeight).stroke();
 
           // Draw cells
@@ -1989,7 +2142,7 @@ sap.ui.define([],
             });
 
             // Cell border
-            doc.lineJoin("round").lineWidth(3).strokeColor(borderColor)
+            doc.lineJoin("round").lineWidth(2).strokeColor(borderColor)
               .rect(colX, rectY, col.width, maxHeight).stroke();
 
             colX += col.width;
@@ -2001,12 +2154,12 @@ sap.ui.define([],
         //-------------------------------------------------------
         // ADD ALL ROWS
         //-------------------------------------------------------
-        jsonData.status_log.forEach(drawRow);
+        (jsonData.status_log || []).forEach(drawRow);
 
         //-------------------------------------------------------
         // Final bottom border
         //-------------------------------------------------------
-        doc.lineJoin("round").lineWidth(3).strokeColor(borderColor)
+        doc.lineJoin("round").lineWidth(2).strokeColor(borderColor)
           .rect(xPointH, rectY, fullWidth, 0.5).stroke();
       },
       toDataURL: function (src, callback) {
