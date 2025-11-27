@@ -569,10 +569,304 @@ sap.ui.define(
                             "uom": "STD",
                             "rate": 10,
                             "total": 50
+                        },
+                        {
+                            "type": "LABOR HOURS",
+                            "qty": 5,
+                            "uom": "STD",
+                            "rate": 10,
+                            "total": 50
+                        },
+                        {
+                            "type": "LABOR HOURS",
+                            "qty": 5,
+                            "uom": "STD",
+                            "rate": 10,
+                            "total": 50
+                        },
+                        {
+                            "type": "LABOR HOURS",
+                            "qty": 5,
+                            "uom": "STD",
+                            "rate": 10,
+                            "total": 50
+                        },
+                        {
+                            "type": "LABOR HOURS",
+                            "qty": 5,
+                            "uom": "STD",
+                            "rate": 10,
+                            "total": 50
+                        },
+                        {
+                            "type": "LABOR HOURS",
+                            "qty": 5,
+                            "uom": "STD",
+                            "rate": 10,
+                            "total": 50
+                        },
+                        {
+                            "type": "LABOR HOURS",
+                            "qty": 5,
+                            "uom": "STD",
+                            "rate": 10,
+                            "total": 50
+                        },
+                        {
+                            "type": "LABOR HOURS",
+                            "qty": 5,
+                            "uom": "STD",
+                            "rate": 10,
+                            "total": 50
+                        },
+                        {
+                            "type": "LABOR HOURS",
+                            "qty": 5,
+                            "uom": "STD",
+                            "rate": 10,
+                            "total": 50
+                        },
+                        {
+                            "type": "LABOR HOURS",
+                            "qty": 5,
+                            "uom": "STD",
+                            "rate": 10,
+                            "total": 50
+                        },
+                        {
+                            "type": "LABOR HOURS",
+                            "qty": 5,
+                            "uom": "STD",
+                            "rate": 10,
+                            "total": 50
+                        },
+                        {
+                            "type": "LABOR HOURS",
+                            "qty": 5,
+                            "uom": "STD",
+                            "rate": 10,
+                            "total": 50
+                        },
+                        {
+                            "type": "LABOR HOURS",
+                            "qty": 5,
+                            "uom": "STD",
+                            "rate": 10,
+                            "total": 50
+                        },
+                        {
+                            "type": "LABOR HOURS",
+                            "qty": 5,
+                            "uom": "STD",
+                            "rate": 10,
+                            "total": 50
+                        },
+                        {
+                            "type": "LABOR HOURS",
+                            "qty": 5,
+                            "uom": "STD",
+                            "rate": 10,
+                            "total": 50
+                        },
+                        {
+                            "type": "LABOR HOURS",
+                            "qty": 5,
+                            "uom": "STD",
+                            "rate": 10,
+                            "total": 50
+                        },
+                        {
+                            "type": "LABOR HOURS",
+                            "qty": 5,
+                            "uom": "STD",
+                            "rate": 10,
+                            "total": 50
+                        },
+                        {
+                            "type": "LABOR HOURS",
+                            "qty": 5,
+                            "uom": "STD",
+                            "rate": 10,
+                            "total": 50
                         }
                     ],
                     "labor_and_fees_total": 50,
                     "materials": [
+                        {
+                            "description": "DRAIN 6\" U FLOW",
+                            "qty": 5,
+                            "uom": "EA",
+                            "unit_price": 944.66,
+                            "total": 4723.3
+                        },
+                        {
+                            "description": "DRAIN 6\" U FLOW",
+                            "qty": 5,
+                            "uom": "EA",
+                            "unit_price": 944.66,
+                            "total": 4723.3
+                        },
+                        {
+                            "description": "DRAIN 6\" U FLOW",
+                            "qty": 5,
+                            "uom": "EA",
+                            "unit_price": 944.66,
+                            "total": 4723.3
+                        },
+                        {
+                            "description": "DRAIN 6\" U FLOW",
+                            "qty": 5,
+                            "uom": "EA",
+                            "unit_price": 944.66,
+                            "total": 4723.3
+                        },
+                        {
+                            "description": "DRAIN 6\" U FLOW",
+                            "qty": 5,
+                            "uom": "EA",
+                            "unit_price": 944.66,
+                            "total": 4723.3
+                        },
+                        {
+                            "description": "DRAIN 6\" U FLOW",
+                            "qty": 5,
+                            "uom": "EA",
+                            "unit_price": 944.66,
+                            "total": 4723.3
+                        },
+                        {
+                            "description": "DRAIN 6\" U FLOW",
+                            "qty": 5,
+                            "uom": "EA",
+                            "unit_price": 944.66,
+                            "total": 4723.3
+                        },
+                        {
+                            "description": "DRAIN 6\" U FLOW",
+                            "qty": 5,
+                            "uom": "EA",
+                            "unit_price": 944.66,
+                            "total": 4723.3
+                        },
+                        {
+                            "description": "DRAIN 6\" U FLOW",
+                            "qty": 5,
+                            "uom": "EA",
+                            "unit_price": 944.66,
+                            "total": 4723.3
+                        },
+                        {
+                            "description": "DRAIN 6\" U FLOW",
+                            "qty": 5,
+                            "uom": "EA",
+                            "unit_price": 944.66,
+                            "total": 4723.3
+                        },
+                        {
+                            "description": "DRAIN 6\" U FLOW",
+                            "qty": 5,
+                            "uom": "EA",
+                            "unit_price": 944.66,
+                            "total": 4723.3
+                        },
+                        {
+                            "description": "DRAIN 6\" U FLOW",
+                            "qty": 5,
+                            "uom": "EA",
+                            "unit_price": 944.66,
+                            "total": 4723.3
+                        },
+                        {
+                            "description": "DRAIN 6\" U FLOW",
+                            "qty": 5,
+                            "uom": "EA",
+                            "unit_price": 944.66,
+                            "total": 4723.3
+                        },
+                        {
+                            "description": "DRAIN 6\" U FLOW",
+                            "qty": 5,
+                            "uom": "EA",
+                            "unit_price": 944.66,
+                            "total": 4723.3
+                        },
+                        {
+                            "description": "DRAIN 6\" U FLOW",
+                            "qty": 5,
+                            "uom": "EA",
+                            "unit_price": 944.66,
+                            "total": 4723.3
+                        },
+                        {
+                            "description": "DRAIN 6\" U FLOW",
+                            "qty": 5,
+                            "uom": "EA",
+                            "unit_price": 944.66,
+                            "total": 4723.3
+                        },
+                        {
+                            "description": "DRAIN 6\" U FLOW",
+                            "qty": 5,
+                            "uom": "EA",
+                            "unit_price": 944.66,
+                            "total": 4723.3
+                        },
+                        {
+                            "description": "DRAIN 6\" U FLOW",
+                            "qty": 5,
+                            "uom": "EA",
+                            "unit_price": 944.66,
+                            "total": 4723.3
+                        },
+                        {
+                            "description": "DRAIN 6\" U FLOW",
+                            "qty": 5,
+                            "uom": "EA",
+                            "unit_price": 944.66,
+                            "total": 4723.3
+                        },
+                        {
+                            "description": "DRAIN 6\" U FLOW",
+                            "qty": 5,
+                            "uom": "EA",
+                            "unit_price": 944.66,
+                            "total": 4723.3
+                        },
+                        {
+                            "description": "DRAIN 6\" U FLOW",
+                            "qty": 5,
+                            "uom": "EA",
+                            "unit_price": 944.66,
+                            "total": 4723.3
+                        },
+                        {
+                            "description": "DRAIN 6\" U FLOW",
+                            "qty": 5,
+                            "uom": "EA",
+                            "unit_price": 944.66,
+                            "total": 4723.3
+                        },
+                        {
+                            "description": "DRAIN 6\" U FLOW",
+                            "qty": 5,
+                            "uom": "EA",
+                            "unit_price": 944.66,
+                            "total": 4723.3
+                        },
+                        {
+                            "description": "DRAIN 6\" U FLOW",
+                            "qty": 5,
+                            "uom": "EA",
+                            "unit_price": 944.66,
+                            "total": 4723.3
+                        },
+                        {
+                            "description": "DRAIN 6\" U FLOW",
+                            "qty": 5,
+                            "uom": "EA",
+                            "unit_price": 944.66,
+                            "total": 4723.3
+                        },
                         {
                             "description": "DRAIN 6\" U FLOW",
                             "qty": 5,
@@ -978,6 +1272,24 @@ sap.ui.define(
                         "building_name": "Build A",
                         "building_inspection_dfct_cnt": "4 ",
                         "sections": [
+                            {
+                                "section_name": "Section A",
+                                "section_inspection_dfct_cnt": "20 ",
+                                "maint_activities_dfct_cnt": "5 ",
+                                "recommended_work_cnt": "0 "
+                            },
+                            {
+                                "section_name": "Section A",
+                                "section_inspection_dfct_cnt": "20 ",
+                                "maint_activities_dfct_cnt": "5 ",
+                                "recommended_work_cnt": "0 "
+                            },
+                            {
+                                "section_name": "Section A",
+                                "section_inspection_dfct_cnt": "20 ",
+                                "maint_activities_dfct_cnt": "5 ",
+                                "recommended_work_cnt": "0 "
+                            },
                             {
                                 "section_name": "Section A",
                                 "section_inspection_dfct_cnt": "20 ",

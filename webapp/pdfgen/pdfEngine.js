@@ -167,68 +167,137 @@ sap.ui.define([],
     // 🧾 CREATE DOCUMENT
     //--------------------------------------------------------------
     function niceDocument(logo, options = {}) {
-      const {
-        paperSize = 'LETTER',
-        reportName = 'Untitled Report',
-        reportNameX = 230,
-        bType = 'window',
-        headerFn = () => { },
-        enableRoundedImage = false,
-        page = 1,
-        icons = [],
-        resolve
-      } = options;
+      return new Promise((promiseResolve, promiseReject) => { // ✅ Renamed to avoid conflict
+        try {
+          const {
+            paperSize = 'LETTER',
+            reportName = 'Untitled Report',
+            reportNameX = 230,
+            downloadName = 'report', // ✅ Added for unique filenames
+            bType = 'window',
+            headerFn = () => { },
+            enableRoundedImage = false,
+            page = 1,
+            icons = [],
+            purpose = "CUSTOMER"
+          } = options;
 
-      const doc = new PDFDocument({
-        size: paperSize,
-        margins: { top: 45, bottom: 1, left: 40, right: 40 }
-      });
+          // ✅ Create new document instance
+          const doc = new PDFDocument({
+            size: paperSize,
+            margins: { top: 45, bottom: 1, left: 40, right: 40 }
+          });
 
-      // Optional helper for rounded images
-      if (enableRoundedImage) {
-        PDFDocument.prototype.roundedImage = function (imgSrc, x, y, width, height, radius) {
-          this.save();
-          this.roundedRect(x, y, width, height, radius).clip();
-          this.image(imgSrc, x, y, { width, height });
-          this.restore();
-          return this;
-        };
-      }
+          // Optional helper for rounded images
+          if (enableRoundedImage) {
+            PDFDocument.prototype.roundedImage = function (imgSrc, x, y, width, height, radius) {
+              this.save();
+              this.roundedRect(x, y, width, height, radius).clip();
+              this.image(imgSrc, x, y, { width, height });
+              this.restore();
+              return this;
+            };
+          }
 
-      // 🟦 Apply footer + layout (shared)
-      applyFooterAndLayout(doc, {
-        reportName,
-        reportNameX,
-        page
-      });
+          // 🟦 Apply footer + layout (shared)
+          applyFooterAndLayout(doc, {
+            reportName,
+            reportNameX,
+            page
+          });
 
-      const stream = doc.pipe(blobStream());
+          const stream = doc.pipe(blobStream());
 
-      // Call header renderer if provided
-      if (typeof headerFn === "function") headerFn(doc, logo, icons);
+          // Call header renderer if provided
+          if (typeof headerFn === "function") {
+            headerFn(doc, logo, icons, purpose); // ✅ Pass purpose to header
+          }
 
-      // Finalize the PDF
-      doc.end();
+          // Finalize the PDF
+          doc.end();
 
-      // --- Stream output handler ---
-      stream.on('finish', function () {
-        const blob = stream.toBlob('application/pdf');
-        const url = stream.toBlobURL('application/pdf');
+          // --- Stream output handler ---
+          stream.on('finish', function () {
+            try {
+              const blob = stream.toBlob('application/pdf');
+              const url = stream.toBlobURL('application/pdf');
 
-        if (bType === 'binary') {
-          const reader = new FileReader();
-          reader.readAsDataURL(blob);
-          reader.onloadend = function () {
-            const base64data = reader.result;
-            if (resolve) resolve(atob(base64data.split('base64,')[1]));
-          };
-        } else if (bType === 'blobURL') {
-          if (resolve) resolve(url);
-        } else {
-          // Default open in new tab
-          window.open(url, '_blank');
+              if (bType === 'binary') {
+                const reader = new FileReader();
+                reader.readAsDataURL(blob);
+                reader.onloadend = function () {
+                  try {
+                    const base64data = reader.result;
+                    const binaryData = atob(base64data.split('base64,')[1]);
+                    promiseResolve(binaryData); // ✅ Always resolve
+                  } catch (error) {
+                    promiseReject(error);
+                  }
+                };
+                reader.onerror = function (error) {
+                  promiseReject(error);
+                };
+              } else if (bType === 'blobURL') {
+                promiseResolve(url); // ✅ Always resolve
+              } 
+              // else if (bType === 'download') {
+              //   // ✅ Handle download case
+              //   const link = document.createElement('a');
+              //   link.href = url;
+              //   link.download = `${downloadName}_${purpose}.pdf`; // ✅ Unique filename
+              //   link.click();
+              //   promiseResolve(blob); // ✅ Resolve with blob
+              // } 
+              else {
+                // Default: open in new tab
+                window.open(url, '_blank');
+                promiseResolve(url); // ✅ Always resolve
+              }
+            } catch (error) {
+              promiseReject(error);
+            }
+          });
+
+          // ✅ Handle stream errors
+          stream.on('error', function (error) {
+            console.error('Stream error:', error);
+            promiseReject(error);
+          });
+
+          // ✅ Handle document errors
+          doc.on('error', function (error) {
+            console.error('Document error:', error);
+            promiseReject(error);
+          });
+
+        } catch (error) {
+          console.error('niceDocument error:', error);
+          promiseReject(error);
         }
       });
+    }
+
+    function addWatermark(doc, text, options = {}) {
+      const {
+        opacity = 0.2,
+        fontSize = 90,
+        angle = -45,
+        color = 'red',
+      } = options;
+
+      const pageWidth = doc.page.width - 90;
+      const pageHeight = doc.page.height - 80;
+
+      doc.save();
+
+      // Center point
+      doc.fillColor(color)
+        .opacity(opacity)
+        .fontSize(fontSize)
+        .rotate(angle, { origin: [pageWidth / 2, pageHeight / 2] })
+        .text(text, pageWidth / 2 - 50, pageHeight / 2 - 90, { align: 'center', width: fontSize, characterSpacing: -0.2, wordSpacing: -0.4 });
+
+      doc.restore();
     }
 
     //--------------------------------------------------------------
@@ -261,7 +330,6 @@ sap.ui.define([],
 
       return false;
     }
-
     return {
       pdfPM: function (jsonData, bType = 'download', paperSize = 'LETTER') {
         var that = this;
@@ -274,12 +342,12 @@ sap.ui.define([],
             reportName = 'Preventative Maintenance Report';
           jsonData = JSON.parse(JSON.stringify(jsonData));
 
-          let header = (doc, logo, icons) => {
+          let header = (doc, logo, icons, purpose) => {
 
             let xPoint = doc.page.margins.left;
             let yPoint = doc.page.margins.top;
             that.createFirstPageInfo(doc, jsonData, logo, reportName, xPoint, yPoint);
-            addPage(doc, page += 1);
+            addPage(doc, page += 1, null, purpose);
             const fullWidth = doc.page.width - 90;
             //--------------------------------------------------------------
             // 📄 Report Summary Header
@@ -302,8 +370,8 @@ sap.ui.define([],
 
                 // PAGE BREAK FIX
                 if (textY > doc.page.height - 40) {
-                  addPage(doc, page += 1);
-                  rectY = 40;
+                  addPage(doc, page += 1, null, purpose);
+                  rectY = 65;
                   textY = rectY + 20;
                 }
 
@@ -321,8 +389,8 @@ sap.ui.define([],
                 const rowHeight = 22;
 
                 // PAGE BREAK FIX
-                if (rectY + rowHeight + 20 > doc.page.height - 40) {
-                  addPage(doc, page += 1);
+                if (rectY + rowHeight > doc.page.height - 40) {
+                  addPage(doc, page += 1, null, purpose);
                   reportSummaryBreakHeader(doc, building.building_name, sectionName);
                   rectY = doc.y + 10;
                 }
@@ -349,8 +417,8 @@ sap.ui.define([],
               rectY += 35;
               // PAGE BREAK FIX
               if (rectY > doc.page.height - 40) {
-                addPage(doc, page += 1);
-                rectY = 45;
+                addPage(doc, page += 1, null, purpose);
+                rectY = 65;
               }
               drawHeader(BORDER_BLUE, building.building_name, rectY, "Building: ");
 
@@ -364,9 +432,10 @@ sap.ui.define([],
               (building.sections || []).forEach((section) => {
                 rectY += 20;
                 // PAGE BREAK FIX
-                if (rectY > doc.page.height - 40) {
-                  addPage(doc, page += 1);
-                  rectY = 40;
+                if (rectY + (4 * 22) > doc.page.height - 40) { // 4 * 22 means there will four rows including the section header
+                  addPage(doc, page += 1, null, purpose);
+                  reportSummaryBreakHeader(doc, building.building_name);
+                  rectY = 85;
                 }
                 drawHeader(BORDER_ORANGE, section.section_name, rectY, "Section: ");
                 rectY += 10;
@@ -389,7 +458,7 @@ sap.ui.define([],
             //--------------------------------------------------------------
             rectX = 45;  // Left margin for all boxes and text
             rectY = 40;  // Starting Y position
-            addPage(doc, page += 1); // Create the first page
+            addPage(doc, page += 1, null, purpose); // Create the first page
             //--------------------------------------------------------------
             // 🏢 LOOP THROUGH EACH BUILDING ENTRY
             //--------------------------------------------------------------
@@ -449,7 +518,7 @@ sap.ui.define([],
                 (building.photos || []).forEach((photo, index) => {
                   // 🧾 Page break if image exceeds bottom margin
                   if (y + photoHeight > doc.page.height - 40) {
-                    addPage(doc, page += 1);
+                    addPage(doc, page += 1, null, purpose);
 
                     let sValue = `${sBuildPage} ${building.name}`
                     printPageBreakHeader(doc, sValue);
@@ -475,7 +544,7 @@ sap.ui.define([],
               }
               rectX = 45;  // Left margin for all boxes and text
               rectY = 40;  // Starting Y position
-              addPage(doc, page += 1); // Create the first page
+              addPage(doc, page += 1, null, purpose); // Create the first page
 
               const drawHeaderBar = (title, y) => {
                 drawRoundedRect(doc, xPointH, y - 20, fullWidth, 25, 4, BORDER_BLUE);
@@ -594,7 +663,7 @@ sap.ui.define([],
               //--------------------------------------------------------------
               if (building.inspections) {
 
-                addPage(doc, page += 1);
+                addPage(doc, page += 1, null, purpose);
                 rectX = 45;
                 rectY = 40;
 
@@ -623,7 +692,7 @@ sap.ui.define([],
                   const totalBlockHeight = headerHeight + descriptionHeight + commentsHeight + photoHeaderHeight + photoBlockHeight + 40;
 
                   if ((rectY + totalBlockHeight > doc.page.height - 60) && iBuildCount !== 0) {
-                    addPage(doc, page += 1);
+                    addPage(doc, page += 1, null, purpose);
                     let sValue = `${sBuildPage} ${building.name}, ${sBuildInspPage}`
                     printPageBreakHeader(doc, sValue);
                     rectY = doc.y + 10;
@@ -692,7 +761,7 @@ sap.ui.define([],
 
                       // Page break check
                       if (y + photoHeight > doc.page.height - 40) {
-                        addPage(doc, page += 1);
+                        addPage(doc, page += 1, null, purpose);
 
                         let sValue = `${sBuildPage} ${building.name}, ${sBuildInspPage}`
                         printPageBreakHeader(doc, sValue);
@@ -730,7 +799,7 @@ sap.ui.define([],
                 // 🏢 SECTIONS LOOP
                 // ────────────────────────────────────────────────────────────────
                 (building.sections || []).forEach((section) => {
-                  rectX = 45; rectY = 40; addPage(doc, page += 1);
+                  rectX = 45; rectY = 40; addPage(doc, page += 1, null, purpose);
                   // ────────────────────────────────────────────────────────────────
                   // 📘 SECTION HEADER (Compact Two-Line Style)
                   // ────────────────────────────────────────────────────────────────
@@ -781,7 +850,7 @@ sap.ui.define([],
                     (section.photos || []).forEach((photo, index) => {
                       // 🧾 Page break if image exceeds bottom margin
                       if (y + photoHeight > doc.page.height - 40) {
-                        addPage(doc, page += 1);
+                        addPage(doc, page += 1, null, purpose);
 
                         let sValue = `${sBuildPage} ${building.name}, ${sSectPage} ${section.name}`
                         printPageBreakHeader(doc, sValue);
@@ -810,7 +879,7 @@ sap.ui.define([],
                   //--------------------------------------------------------------
                   rectX = 45;
                   rectY = 40;
-                  addPage(doc, page += 1);
+                  addPage(doc, page += 1, null, purpose);
                   //--------------------------------------------------------------
                   // 🏗️ Roof Specification Table
                   //--------------------------------------------------------------
@@ -873,7 +942,7 @@ sap.ui.define([],
                   //--------------------------------------------------------------
                   rectX = 45;
                   rectY = 40;
-                  addPage(doc, page += 1);
+                  addPage(doc, page += 1, null, purpose);
                   if (section.inspection_matrix?.length) {
                     if (addPage(doc, page += 1, 270)) rectY = doc.y; else page -= 1;
 
@@ -928,7 +997,7 @@ sap.ui.define([],
 
                     rectX = 45;
                     rectY = 40;
-                    addPage(doc, page += 1);
+                    addPage(doc, page += 1, null, purpose);
 
                     // ────────────────────────────────────────────────────────────────
                     // 🔵 INSPECTIONS FOR SECTION HEADER
@@ -958,7 +1027,7 @@ sap.ui.define([],
                       const totalBlockHeight = headerHeight + descriptionHeight + commentsHeight + photoHeaderHeight + photoBlockHeight + 40;
 
                       if ((rectY + totalBlockHeight > doc.page.height - 60) && iSectInspCount !== 0) {
-                        addPage(doc, page += 1);
+                        addPage(doc, page += 1, null, purpose);
                         let sValue = `${sBuildPage} ${building.name}, ${sSectPage} ${section.name}, ${sSecInspPage}`;
                         printPageBreakHeader(doc, sValue);
                         rectY = doc.y + 10;
@@ -1006,7 +1075,7 @@ sap.ui.define([],
                         (insp.photos || []).forEach((photo) => {
 
                           if (y + photoHeight > doc.page.height) {
-                            addPage(doc, page += 1);
+                            addPage(doc, page += 1, null, purpose);
                             let sValue = `${sBuildPage} ${building.name}, ${sSectPage} ${section.name}, ${sSecInspPage}`;
                             printPageBreakHeader(doc, sValue);
                             printPageBreakSubHeader(doc, sSectInspActivity, color, symbol, icons);
@@ -1042,7 +1111,7 @@ sap.ui.define([],
                   if (section.maint_acts?.length) {
                     rectX = 45;
                     rectY = 40;
-                    addPage(doc, page += 1);
+                    addPage(doc, page += 1, null, purpose);
 
                     //--------------------------------------------------------------
                     // 🔹 Header Blue Bar
@@ -1062,7 +1131,7 @@ sap.ui.define([],
                       // PAGE BREAK CHECK before starting entire block
                       //------------------------------------------------------------------
                       if (rectY + 500 > doc.page.height - 60) {
-                        addPage(doc, page += 1);
+                        addPage(doc, page += 1, null, purpose);
                         let sValue = `${sBuildPage} ${building.name}, ${sSectPage} ${section.name}, ${sMainActPage}`
                         printPageBreakHeader(doc, sValue);
                         rectY = doc.y + 10;
@@ -1129,7 +1198,7 @@ sap.ui.define([],
 
                           // PAGE BREAK CHECK
                           if (y + photoHeight > doc.page.height - 60) {
-                            addPage(doc, page += 1);
+                            addPage(doc, page += 1, null, purpose);
                             let sValue = `${sBuildPage} ${building.name}, ${sSectPage} ${section.name}, ${sMainActPage}`
                             printPageBreakHeader(doc, sValue);
                             printPageBreakSubHeader(doc, sMaintActivity, BORDER_ORANGE, null, icons);
@@ -1163,7 +1232,7 @@ sap.ui.define([],
 
                       // 🔥 PAGE BREAK CHECK BEFORE STARTING DEFECT/REPAIR PHOTOS
                       if (rectY + 200 > doc.page.height - 40) {   // 200 = estimated header + one row buffer
-                        addPage(doc, page += 1);
+                        addPage(doc, page += 1, null, purpose);
                         let sValue = `${sBuildPage} ${building.name}, ${sSectPage} ${section.name}, ${sMainActPage}`;
                         printPageBreakHeader(doc, sValue);
                         printPageBreakSubHeader(doc, sMaintActivity, BORDER_ORANGE, null, icons);
@@ -1226,7 +1295,7 @@ sap.ui.define([],
                           // Draw line for current page BEFORE page break
                           let lineEndY = Math.max(leftY, rightY) - 5;
                           drawCenterLine(doc, lineStartY - 30, lineEndY);
-                          addPage(doc, page += 1);
+                          addPage(doc, page += 1, null, purpose);
                           let sValue = `${sBuildPage} ${building.name}, ${sSectPage} ${section.name}, ${sMainActPage}`;
                           printPageBreakHeader(doc, sValue);
                           printPageBreakSubHeader(doc, sMaintActivity, BORDER_ORANGE, null, icons, "maintAct");
@@ -1247,7 +1316,7 @@ sap.ui.define([],
                           // Draw line for current page BEFORE page break
                           let lineEndY = Math.max(leftY, rightY) - 5; // Subtract last spacing
                           drawCenterLine(doc, lineStartY - 30, lineEndY);
-                          addPage(doc, page += 1);
+                          addPage(doc, page += 1, null, purpose);
                           let sValue = `${sBuildPage} ${building.name}, ${sSectPage} ${section.name}, ${sMainActPage}`;
                           printPageBreakHeader(doc, sValue);
                           printPageBreakSubHeader(doc, sMaintActivity, BORDER_ORANGE, null, icons, "maintAct");
@@ -1279,7 +1348,7 @@ sap.ui.define([],
                   if (section.recommended_work?.length) {
                     rectX = 45;
                     rectY = 40;
-                    addPage(doc, page += 1);
+                    addPage(doc, page += 1, null, purpose);
                     const headerX = rectX, headerWidth = fullWidth;
 
                     // ────────────────────────────────────────────────────────────────
@@ -1307,7 +1376,7 @@ sap.ui.define([],
                       const totalBlockHeight = headerHeight + descriptionHeight + commentsHeight + photoHeaderHeight + photoBlockHeight + 40;
 
                       if ((rectY + totalBlockHeight > doc.page.height - 60) && iRecomWorkCount !== 0) {
-                        addPage(doc, page += 1);
+                        addPage(doc, page += 1, null, purpose);
                         let sValue = `${sBuildPage} ${building.name}, ${sSectPage} ${section.name}, ${sRecomWork}`;
                         printPageBreakHeader(doc, sValue);
                         rectY = 85;
@@ -1346,7 +1415,7 @@ sap.ui.define([],
                         (work.photos || []).forEach((photo) => {
 
                           if (y + photoHeight > doc.page.height - 40) {
-                            addPage(doc, page += 1);
+                            addPage(doc, page += 1, null, purpose);
                             let sValue = `${sBuildPage} ${building.name}, ${sSectPage} ${section.name}, ${sRecomWork}`
                             printPageBreakHeader(doc, sValue);
                             printPageBreakSubHeader(doc, sWorkActivity, BORDER_ORANGE, null, icons);
@@ -1377,6 +1446,7 @@ sap.ui.define([],
                 });
               }
             });
+
           }
           const addPage = (doc, page = null, checkSpace = null) => {
             return addPageGeneric(doc, {
@@ -1418,17 +1488,19 @@ sap.ui.define([],
           var page = 1,
             reportName = 'Work Authorization and Service Summary';
           jsonData = JSON.parse(JSON.stringify(jsonData));
-          let header = (doc, logo, icons) => {
+          let header = (doc, logo, icons, purpose) => {
             let xPoint = doc.page.margins.left;
             let yPoint = doc.page.margins.top;
             that.createFirstPageInfo(doc, jsonData, logo, reportName, xPoint, yPoint);
-            addPage(doc, page += 1);
+            addPage(doc, page += 1, null, purpose);
             const fullWidth = doc.page.width - 90;
             //--------------------------------------------------------------
             // 📄 Report Summary Header
             //--------------------------------------------------------------
             let rectX = 45;
             let rectY = 40;
+
+            rectY += 25;
             drawRoundedRect(doc, xPointH, rectY - 25, fullWidth, 35, 4, BORDER_BLUE);
             drawText(doc, "Report Summary", rectX, rectY - 15, { size: 18, bold: true, color: BORDER_BLUE, width: doc.page.width - 100, align: "left", characterSpacing: -0.2, wordSpacing: -0.4 });
             //--------------------------------------------------------------
@@ -1443,8 +1515,8 @@ sap.ui.define([],
 
                 // PAGE BREAK FIX
                 if (textY > doc.page.height - 40) {
-                  addPage(doc, page += 1);
-                  rectY = 40;
+                  addPage(doc, page += 1, null, purpose);
+                  rectY = 65;
                   textY = rectY + 20;
                 }
 
@@ -1463,7 +1535,7 @@ sap.ui.define([],
 
                 // PAGE BREAK FIX
                 if (rectY + rowHeight + 20 > doc.page.height - 40) {
-                  addPage(doc, page += 1);
+                  addPage(doc, page += 1, null, purpose);
                   reportSummaryBreakHeader(doc, building.building_name, sectionName);
                   rectY = doc.y + 10;
                 }
@@ -1493,8 +1565,8 @@ sap.ui.define([],
               rectY += 35;
               // PAGE BREAK FIX
               if (rectY > doc.page.height - 40) {
-                addPage(doc, page += 1);
-                rectY = 40;
+                addPage(doc, page += 1, null, purpose);
+                rectY = 65;
               }
               drawHeader(BORDER_BLUE, building.building_name, rectY, "Building: ");
 
@@ -1505,9 +1577,10 @@ sap.ui.define([],
               (building.sections || []).forEach((section) => {
                 rectY += 20;
                 // PAGE BREAK FIX
-                if (rectY > doc.page.height - 40) {
-                  addPage(doc, page += 1);
-                  rectY = 40;
+                if (rectY + (3 * 22) > doc.page.height - 40) {
+                  addPage(doc, page += 1, null, purpose);
+                  reportSummaryBreakHeader(doc, building.building_name);
+                  rectY = 85;
                 }
                 drawHeader(BORDER_ORANGE, section.section_name, rectY, "Section: ");
                 rectY += 10;
@@ -1515,7 +1588,6 @@ sap.ui.define([],
                 // 📋 DEFECT + RECOMMENDED WORK TABLES
                 const renderRows = (items, prefix) => {
                   (items || []).forEach((item, i) => {
-                    if (addPage(doc, page += 1, 100)) rectY = doc.y;
                     drawTableRow(`${prefix}: ${i + 1}`, item.activity || "", item.selection || "");
                   });
                 };
@@ -1533,7 +1605,7 @@ sap.ui.define([],
             //--------------------------------------------------------------
             rectX = 45;  // Left margin for all boxes and text
             rectY = 40;  // Starting Y position
-            addPage(doc, page += 1); // Create the first page
+            addPage(doc, page += 1, null, purpose); // Create the first page
             //--------------------------------------------------------------
             // 🏢 LOOP THROUGH EACH BUILDING ENTRY
             //--------------------------------------------------------------
@@ -1593,7 +1665,7 @@ sap.ui.define([],
                 (building.photos || []).forEach((photo, index) => {
                   // 🧾 Page break if image exceeds bottom margin
                   if (y + photoHeight > doc.page.height - 40) {
-                    addPage(doc, page += 1);
+                    addPage(doc, page += 1, null, purpose);
 
                     let sValue = `${sBuildPage} ${building.name}`
                     printPageBreakHeader(doc, sValue);
@@ -1626,7 +1698,7 @@ sap.ui.define([],
                 // 🏢 SECTIONS LOOP
                 // ────────────────────────────────────────────────────────────────
                 (building.sections || []).forEach((section) => {
-                  rectX = 45; rectY = 40; addPage(doc, page += 1);
+                  rectX = 45; rectY = 40; addPage(doc, page += 1, null, purpose);
                   // ────────────────────────────────────────────────────────────────
                   // 📘 SECTION HEADER (Compact Two-Line Style)
                   // ────────────────────────────────────────────────────────────────
@@ -1677,7 +1749,7 @@ sap.ui.define([],
                     (section.photos || []).forEach((photo, index) => {
                       // 🧾 Page break if image exceeds bottom margin
                       if (y + photoHeight > doc.page.height - 40) {
-                        addPage(doc, page += 1);
+                        addPage(doc, page += 1, null, purpose);
 
                         let sValue = `${sBuildPage} ${building.name}, ${sSectPage} ${section.name}`
                         printPageBreakHeader(doc, sValue);
@@ -1708,7 +1780,7 @@ sap.ui.define([],
                   if (section.defects?.length) {
                     rectX = 45;
                     rectY = 40;
-                    addPage(doc, page += 1);
+                    addPage(doc, page += 1, null, purpose);
 
                     //--------------------------------------------------------------
                     // 🔹 Header Blue Bar
@@ -1728,7 +1800,7 @@ sap.ui.define([],
                       // PAGE BREAK CHECK before starting entire block
                       //------------------------------------------------------------------
                       if (rectY + 500 > doc.page.height - 60) {
-                        addPage(doc, page += 1);
+                        addPage(doc, page += 1, null, purpose);
                         let sValue = `${sBuildPage} ${building.name}, ${sSectPage} ${section.name}, ${sMainActPage}`
                         printPageBreakHeader(doc, sValue);
                         rectY = doc.y + 10;
@@ -1795,10 +1867,10 @@ sap.ui.define([],
 
                           // PAGE BREAK CHECK
                           if (y + photoHeight > doc.page.height - 60) {
-                            addPage(doc, page += 1);
+                            addPage(doc, page += 1, null, purpose);
                             let sValue = `${sBuildPage} ${building.name}, ${sSectPage} ${section.name}, ${sMainActPage}`
                             printPageBreakHeader(doc, sValue);
-                            printPageBreakSubHeader(doc, sMaintActivity, BORDER_ORANGE, null, icons, "defect");
+                            printPageBreakSubHeader(doc, sMaintActivity, BORDER_ORANGE, null, icons);
                             y = doc.y + 10;     // reset Y
                             x = xPointH;
 
@@ -1829,10 +1901,10 @@ sap.ui.define([],
 
                       // 🔥 PAGE BREAK CHECK BEFORE STARTING DEFECT/REPAIR PHOTOS
                       if (rectY + 200 > doc.page.height - 40) {   // 200 = estimated header + one row buffer
-                        addPage(doc, page += 1);
+                        addPage(doc, page += 1, null, purpose);
                         let sValue = `${sBuildPage} ${building.name}, ${sSectPage} ${section.name}, ${sMainActPage}`;
                         printPageBreakHeader(doc, sValue);
-                        printPageBreakSubHeader(doc, sMaintActivity, BORDER_ORANGE, null, icons, "defect");
+                        printPageBreakSubHeader(doc, sMaintActivity, BORDER_ORANGE, null, icons);
                         rectY = doc.y + 10;
                       }
 
@@ -1892,7 +1964,7 @@ sap.ui.define([],
                           // Draw line for current page BEFORE page break
                           let lineEndY = Math.max(leftY, rightY) - 5;
                           drawCenterLine(doc, lineStartY - 30, lineEndY);
-                          addPage(doc, page += 1);
+                          addPage(doc, page += 1, null, purpose);
                           let sValue = `${sBuildPage} ${building.name}, ${sSectPage} ${section.name}, ${sMainActPage}`;
                           printPageBreakHeader(doc, sValue);
                           printPageBreakSubHeader(doc, sMaintActivity, BORDER_ORANGE, null, icons, "defect");
@@ -1913,7 +1985,7 @@ sap.ui.define([],
                           // Draw line for current page BEFORE page break
                           let lineEndY = Math.max(leftY, rightY) - 5;
                           drawCenterLine(doc, lineStartY - 30, lineEndY);
-                          addPage(doc, page += 1);
+                          addPage(doc, page += 1, null, purpose);
                           let sValue = `${sBuildPage} ${building.name}, ${sSectPage} ${section.name}, ${sMainActPage}`;
                           printPageBreakHeader(doc, sValue);
                           printPageBreakSubHeader(doc, sMaintActivity, BORDER_ORANGE, null, icons, "defect");
@@ -1946,7 +2018,7 @@ sap.ui.define([],
                   if (section.recommended_work?.length) {
                     rectX = 45;
                     rectY = 40;
-                    addPage(doc, page += 1);
+                    addPage(doc, page += 1, null, purpose);
                     const headerX = rectX, headerWidth = fullWidth;
 
                     // ────────────────────────────────────────────────────────────────
@@ -1974,7 +2046,7 @@ sap.ui.define([],
                       const totalBlockHeight = headerHeight + descriptionHeight + commentsHeight + photoHeaderHeight + photoBlockHeight + 40;
 
                       if ((rectY + totalBlockHeight > doc.page.height - 60) && iRecomWorkCount !== 0) {
-                        addPage(doc, page += 1);
+                        addPage(doc, page += 1, null, purpose);
                         let sValue = `${sBuildPage} ${building.name}, ${sSectPage} ${section.name}, ${sRecomWork}`;
                         printPageBreakHeader(doc, sValue);
                         rectY = 85;
@@ -2014,7 +2086,7 @@ sap.ui.define([],
                         (work.photos || []).forEach((photo) => {
 
                           if (y + photoHeight > doc.page.height - 40) {
-                            addPage(doc, page += 1);
+                            addPage(doc, page += 1, null, purpose);
                             let sValue = `${sBuildPage} ${building.name}, ${sSectPage} ${section.name}, ${sRecomWork}`
                             printPageBreakHeader(doc, sValue);
                             printPageBreakSubHeader(doc, sWorkActivity, BORDER_ORANGE, null, icons);
@@ -2048,8 +2120,8 @@ sap.ui.define([],
             //--------------------------------------------------------------
             // 💼 Labor and Materials Section (Optimized — uses drawRoundedRect/drawText/drawImage)
             //--------------------------------------------------------------
-            if (jsonData.labor_fees_and_materials) {
-              addPage(doc, page += 1);
+            if (purpose === "CONFIDENTIAL" && jsonData.labor_fees_and_materials) {
+              addPage(doc, page += 1, null, purpose);
               let rectX = 45, rectY = 40;
 
               const blue = BORDER_BLUE;
@@ -2111,24 +2183,37 @@ sap.ui.define([],
                 }
               };
 
-              // helper: page-break safe renderer for a list of rows (keeps header reprint)
-              const renderRowsWithPaging = (rows, renderRowFn, headers, headerYOffsetRef) => {
-                // ensure first header printed (headers already printed before calling in main flow)
+              const renderRowsWithPaging = (rows, renderRowFn, headers, sTable) => {
+                const rowHeight = 24;
+                const pageMarginBottom = 60;
+
                 for (let r = 0; r < rows.length; r++) {
-                  // estimate row height
-                  const estRowH = 24;
-                  if (rectY + estRowH + 60 > doc.page.height) {
-                    // add page and reprint section headers (maintain style from other sections)
-                    addPage(doc, page += 1);
-                    // reprint top title for this area if needed (we keep it simple — header rows reprinted)
-                    if (headers) renderTableHeader(headers, rectY);
-                    rectY += estRowH;
+
+                  // --- PAGE BREAK CHECK ---
+                  if (rectY + rowHeight + pageMarginBottom > doc.page.height) {
+
+                    // NEW PAGE
+                    addPage(doc, page += 1, null, purpose);
+                    let sValue = `${sTable}`
+                    printPageBreakHeader(doc, sValue);
+                    // RESET STARTING Y
+                    rectY = 65;
+
+                    // REPRINT TABLE HEADER AT TOP
+                    if (headers) {
+                      renderTableHeader(headers, rectY);
+                      rectY += rowHeight;   // move below header
+                    }
                   }
 
+                  // --- DRAW ROW ---
                   renderRowFn(rows[r], rectY);
-                  rectY += estRowH;
+
+                  // move Y down for next row
+                  rectY += rowHeight;
                 }
               };
+
 
               //--------------------------------------------------------------
               // 📘 MAIN TITLE
@@ -2141,7 +2226,8 @@ sap.ui.define([],
               // 🟦 Labor Header
               //--------------------------------------------------------------
               drawRoundedRect(doc, xPointH, rectY - 6, fullWidth, 24, 0, blue, true);
-              drawText(doc, "Labor and Fees", rectX, rectY + 2, { bold: true, size: 13, color: "white", width: fullWidth });
+              let sTable = "Labor and Fees";
+              drawText(doc, sTable, rectX, rectY + 2, { bold: true, size: 13, color: "white", width: fullWidth });
               rectY += 20;
 
               //--------------------------------------------------------------
@@ -2158,13 +2244,13 @@ sap.ui.define([],
                 row.rate ?? "",
                 row.total ?? ""
               ]);
-              renderRowsWithPaging(laborRows, (vals, y) => renderDataRow(vals, y, false), laborHeaders);
+              renderRowsWithPaging(laborRows, (vals, y) => renderDataRow(vals, y, false), laborHeaders, sTable);
               // after rows rectY already moved
 
               //--------------------------------------------------------------
               // 🟧 Labor Total
               //--------------------------------------------------------------
-              if (rectY + 60 > doc.page.height) { addPage(doc, page += 1); rectY = 45; }
+              if (rectY + 60 > doc.page.height) { addPage(doc, page += 1, null, purpose); rectY = 45; }
               drawRoundedRect(doc, xPointH, rectY, fullWidth, 24, 0, orange, true);
               drawText(doc, "Labor and Fees Total:", rectX, rectY + 8, { bold: true, size: 11, color: "white", width: fullWidth - 110 });
               drawText(doc, `${parseFloat(jsonData.labor_fees_and_materials.labor_and_fees_total || 0).toLocaleString('en-US', currencyOptions)}`, xPointH + fullWidth - 95, rectY + 8, { bold: true, size: 11, color: "white", align: "right", width: 90 });
@@ -2173,9 +2259,10 @@ sap.ui.define([],
               //--------------------------------------------------------------
               // 🟦 Materials Header
               //--------------------------------------------------------------
-              if (rectY + 120 > doc.page.height) { addPage(doc, page += 1); rectY = 45; }
+              if (rectY + 120 > doc.page.height) { addPage(doc, page += 1, null, purpose); rectY = 45; }
               drawRoundedRect(doc, xPointH, rectY, fullWidth, 24, 0, blue, true);
-              drawText(doc, "Materials", rectX, rectY + 7, { bold: true, size: 13, color: "white", width: fullWidth });
+              sTable = "Materials";
+              drawText(doc, sTable, rectX, rectY + 7, { bold: true, size: 13, color: "white", width: fullWidth });
               rectY += 26;
 
               //--------------------------------------------------------------
@@ -2191,12 +2278,12 @@ sap.ui.define([],
                 row.unit_price ?? "",
                 row.total ?? ""
               ]);
-              renderRowsWithPaging(matRows, (vals, y) => renderDataRow(vals, y, true), matHeaders);
+              renderRowsWithPaging(matRows, (vals, y) => renderDataRow(vals, y, true), matHeaders, sTable);
 
               //--------------------------------------------------------------
               // 🟧 Materials Total
               //--------------------------------------------------------------
-              if (rectY + 80 > doc.page.height) { addPage(doc, page += 1); rectY = 45; }
+              if (rectY + 80 > doc.page.height) { addPage(doc, page += 1, null, purpose); rectY = 45; }
               drawRoundedRect(doc, xPointH, rectY, fullWidth, 24, 0, orange, true);
               drawText(doc, "Materials Total:", rectX, rectY + 8, { bold: true, size: 11, color: "white", width: fullWidth - 110 });
               drawText(doc, `${parseFloat(jsonData.labor_fees_and_materials.material_total || 0).toLocaleString('en-US', currencyOptions)}`, xPointH + fullWidth - 95, rectY + 8, { bold: true, size: 11, color: "white", align: "right", width: 90 });
@@ -2205,7 +2292,7 @@ sap.ui.define([],
               //--------------------------------------------------------------
               // 🔵 Totals Summary Box
               //--------------------------------------------------------------
-              if (rectY + 120 > doc.page.height) { addPage(doc, page += 1); rectY = 45; }
+              if (rectY + 120 > doc.page.height) { addPage(doc, page += 1, null, purpose); rectY = 45; }
               const totalsHeight = 70;
               drawRoundedRect(doc, xPointH, rectY, fullWidth, totalsHeight, 0, blue, true);
 
@@ -2230,11 +2317,24 @@ sap.ui.define([],
             //--------------------------------------------------------------
             // 📋 STATUS LOG FROM TABLET
             //--------------------------------------------------------------
-            if (jsonData.status_log && jsonData.status_log.length) {
+            if (purpose === "CONFIDENTIAL" && jsonData.status_log && jsonData.status_log.length) {
               that.createStatusLogScreen(doc, jsonData, page, addPage, xPointH);
             }
           }
-          const addPage = (doc, page = null, checkSpace = null) => {
+          const addPage = (doc, page = null, checkSpace = null, purpose) => {
+
+            if (purpose === "CONFIDENTIAL") {
+
+              // Add watermark on first page
+              addWatermark(doc, "CONFIDENTIAL", {
+                opacity: 0.4,
+                fontSize: 90,
+                angle: -45,
+                color: "red"
+              });
+
+            }
+
             return addPageGeneric(doc, {
               paperSize,
               reportName,
@@ -2247,20 +2347,34 @@ sap.ui.define([],
               pageXOffset: 85,
               includeSpacing: true // TM version used character/word spacing
             });
+
           };
           let logo = await that.toDataURL("pdfgen/CMLogotaglineHigh.png");
           let check = await that.toDataURL("pdfgen/Check.png");
           let cross = await that.toDataURL("pdfgen/Cross.png");
 
-          niceDocument(logo, {
-            reportName: reportName,
-            reportNameX: 230,
-            downloadName: 'ServiceRepairSummaryForSvcMgr',
-            bType: bType,
-            headerFn: header,
-            page: 1,
-            icons: [check, cross]
-          });
+          let aPDFType = [
+            {
+              type: "TM",
+              purpose: "CUSTOMER"
+            },
+            {
+              type: "TM",
+              purpose: "CONFIDENTIAL"
+            }
+          ]
+          for (const pdfType of aPDFType) {
+            await niceDocument(logo, {
+              reportName: reportName,
+              reportNameX: 230,
+              downloadName: 'ServiceRepairSummaryForSvcMgr',
+              bType: bType,
+              headerFn: header,
+              page: 1,
+              icons: [check, cross],
+              purpose: pdfType.purpose
+            });
+          }
         });
       },
       createFirstPageInfo: async function (doc, jsonData, logo, reportName, xPoint, yPoint) {
@@ -2387,7 +2501,8 @@ sap.ui.define([],
         //-------------------------------------------------------
         const headingHeight = 30;
         drawRoundedRect(doc, xPointH, rectY, fullWidth, headingHeight, 4, borderColor);
-        drawText(doc, `Status Log from Tablet for Notification: ${jsonData.notification_number}`, rectX, rectY + 9, { bold: true, size: 16, color: borderColor, width: fullWidth - 20, align: "left" });
+        let sHeaderTitle = `Status Log from Tablet for Notification: ${jsonData.notification_number}`;
+        drawText(doc, sHeaderTitle, rectX, rectY + 9, { bold: true, size: 16, color: borderColor, width: fullWidth - 20, align: "left" });
 
         rectY += headingHeight + 5;
 
@@ -2439,9 +2554,10 @@ sap.ui.define([],
         const drawRow = (row) => {
 
           // PAGE BREAK
-          if (rectY + FIXED_ROW_HEIGHT + 40 > doc.page.height - 45) {
+          if (rectY + FIXED_ROW_HEIGHT > doc.page.height - 40) {
             addPage(doc, page += 1, null);
-            rectY = 40;
+            printPageBreakHeader(doc, sHeaderTitle);
+            rectY = 65;
             drawHeader();
           }
           drawRoundedRect(doc, xPointH, rectY, fullWidth, FIXED_ROW_HEIGHT, 0, borderColor, false);

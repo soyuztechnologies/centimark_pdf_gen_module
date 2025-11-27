@@ -14,11 +14,12 @@ sap.ui.define([
 
       },
       onPDFGenerateTM: async function () {
-        const binary = await pdfEngine.pdfTM(constants.newJsonDataTM, 'download');
+        let sPaperSize = "LETTER"; //A4, LETTER
+        const binary = await pdfEngine.pdfTM(constants.newJsonDataTM, 'download', sPaperSize);
       },
       onPDFGeneratePM: async function () {
-        // const binary = await pdfEngine.pdfPM(constants.jsonDataPM, 'download');
-        const binary = await pdfEngine.pdfPM(constants.newJsonDataPM, 'download');
+        let sPaperSize = "LETTER"; //A4, LETTER
+        const binary = await pdfEngine.pdfPM(constants.newJsonDataPM, 'download', sPaperSize);
       }
     });
   });
