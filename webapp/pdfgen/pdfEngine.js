@@ -213,6 +213,15 @@ sap.ui.define([],
             headerFn(doc, logo, icons, purpose); // ✅ Pass purpose to header
           }
 
+          // ✅ CRITICAL: Add watermark to the FINAL/LAST page
+          if (purpose === "CONFIDENTIAL") {
+            addWatermark(doc, "CONFIDENTIAL", {
+              opacity: 0.4,
+              fontSize: 90,
+              angle: -45,
+              color: "red"
+            });
+          }
           // Finalize the PDF
           doc.end();
 
@@ -239,7 +248,7 @@ sap.ui.define([],
                 };
               } else if (bType === 'blobURL') {
                 promiseResolve(url); // ✅ Always resolve
-              } 
+              }
               // else if (bType === 'download') {
               //   // ✅ Handle download case
               //   const link = document.createElement('a');
