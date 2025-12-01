@@ -2120,7 +2120,7 @@ sap.ui.define([],
             //--------------------------------------------------------------
             // 💼 Labor and Materials Section (Optimized — uses drawRoundedRect/drawText/drawImage)
             //--------------------------------------------------------------
-            if (purpose === "CONFIDENTIAL" && jsonData.labor_fees_and_materials) {
+            if (purpose !== "CONFIDENTIAL" && jsonData.labor_fees_and_materials) {
               addPage(doc, page += 1, null, purpose);
               let rectX = 45, rectY = 40;
 
@@ -2317,7 +2317,7 @@ sap.ui.define([],
             //--------------------------------------------------------------
             // 📋 STATUS LOG FROM TABLET
             //--------------------------------------------------------------
-            if (purpose === "CONFIDENTIAL" && jsonData.status_log && jsonData.status_log.length) {
+            if (purpose !== "CONFIDENTIAL" && jsonData.status_log && jsonData.status_log.length) {
               that.createStatusLogScreen(doc, jsonData, page, addPage, xPointH);
             }
           }
@@ -2356,11 +2356,11 @@ sap.ui.define([],
           let aPDFType = [
             {
               type: "TM",
-              purpose: "CUSTOMER"
+              purpose: "CONFIDENTIAL"
             },
             {
               type: "TM",
-              purpose: "CONFIDENTIAL"
+              purpose: "CUSTOMER"
             }
           ]
           for (const pdfType of aPDFType) {
