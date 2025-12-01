@@ -1605,15 +1605,11 @@ sap.ui.define([],
             //--------------------------------------------------------------
             rectX = 45;  // Left margin for all boxes and text
             rectY = 40;  // Starting Y position
-            addPage(doc, page += 1, null, purpose); // Create the first page
+            addPage(doc, page += 1, null, purpose); // Create the building page
             //--------------------------------------------------------------
             // 🏢 LOOP THROUGH EACH BUILDING ENTRY
             //--------------------------------------------------------------
             (jsonData.buildings || []).forEach((building) => {
-              // ────────────────────────────────────────────────────────────────
-              // 📄 PAGE CHECKER
-              // ────────────────────────────────────────────────────────────────
-              if (addPage(doc, page += 1, 270)) rectY = doc.y; else page -= 1;
               // ───────────────────────────────────────────────────────────────
               // 🏠 BUILDING HEADER  (Compact One-Line Style)
               // ────────────────────────────────────────────────────────────────
@@ -2318,7 +2314,7 @@ sap.ui.define([],
             // 📋 STATUS LOG FROM TABLET
             //--------------------------------------------------------------
             if (purpose !== "CONFIDENTIAL" && jsonData.status_log && jsonData.status_log.length) {
-              that.createStatusLogScreen(doc, jsonData, page, addPage, xPointH);
+              that.createStatusLogScreen(doc, jsonData, page, addPage, xPointH, purpose);
             }
           }
           const addPage = (doc, page = null, checkSpace = null, purpose) => {
@@ -2489,8 +2485,8 @@ sap.ui.define([],
         drawText(doc, "Authorized signatory", xPointH, yPointH + 5, { size: 14 });
         drawText(doc, "Authorized signatory", xPointH + 290, yPointH + 5, { size: 14 });
       },
-      createStatusLogScreen: function (doc, jsonData, page, addPage, xPointH) {
-        addPage(doc, page += 1, null);
+      createStatusLogScreen: function (doc, jsonData, page, addPage, xPointH, purpose) {
+        addPage(doc, page += 1, null, purpose);
         const borderColor = BORDER_BLUE;
         const textColor = TEXT_DARK;
         const rectX = 45, fullWidth = doc.page.width - 90;
@@ -2555,7 +2551,7 @@ sap.ui.define([],
 
           // PAGE BREAK
           if (rectY + FIXED_ROW_HEIGHT > doc.page.height - 40) {
-            addPage(doc, page += 1, null);
+            addPage(doc, page += 1, null, purpose);
             printPageBreakHeader(doc, sHeaderTitle);
             rectY = 65;
             drawHeader();
